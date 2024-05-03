@@ -19,7 +19,7 @@ outputs:
 # Construct S3 key for accessing data within S3 bucket
 bucket = "s3://hls-debug-output"
 run_id = "brad_test_samples"
-hls_granule_id = "HLS.L30.T22JBQ.2024055T133022.v2.0"
+hls_granule_id = "HLS.L30.T06WVS.2024120T211159.v2.0"
 sr_key = f"{bucket}/{run_id}/{hls_granule_id}/{hls_granule_id}"
 sat_id = hls_granule_id.split(".")[1]
 
@@ -306,5 +306,5 @@ generate_vi_rasters(
     extracted_attributes.get("SPACECRAFT_NAME", None),
     extracted_attributes.get("TILE_ID", None),
     extracted_attributes.get("spatial_coverage", None),
-    xml_metadata_file="",
+    xml_metadata_file="G2963019115-LPCLOUD.xml",
 )
