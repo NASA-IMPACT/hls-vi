@@ -1,6 +1,9 @@
 import rasterio
 import rioxarray as rxr
 import xarray as xr
+import numpy as np
+import datetime
+import tempfile
 
 """
 inputs:
@@ -21,6 +24,77 @@ sr_key = f"{bucket}/{run_id}/{hls_granule_id}/{hls_granule_id}"
 sat_id = hls_granule_id.split(".")[1]
 
 print(sr_key)
+
+
+def generate_vi_metadata(file1, file2):
+    """
+    Function allows us to create the metadata file for the VI granules
+
+    Args:
+        file1: HLS-VI granule
+        file2: XML metadata file for the original HLS granule.
+    """
+    dataset = rasterio.open(file1)
+    hls_metadata = file2
+    dataset_tags = dataset.tags()
+    ## extract metadata atribute
+    sensing_time = dataset_tags["HLS_PROCESSING_TIME"].split(";")
+
+    source_tree = ET.parse(hls_metadata)
+
+    # update this to copy
+    dest_tree = source_tree
+
+    source_root = source_tree.getroot()
+    dest_root = dest_tree.getroot()
+
+    ## GranuleUR
+    dest_tree.find("GranuleUR").text = dest_tree.find("GranuleUR").text.replace(
+        "HLS", "HLS-VI"
+    )
+
+    ## Temporal Values
+    time_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+    dest_tree.find("InsertTime").text = datetime.datetime.utcnow().strftime(time_format)
+
+    # This needs to be updated to last update time of file
+    dest_tree.find("LastUpdate").text = datetime.datetime.utcnow().strftime(time_format)
+
+    ## Collection
+    collection = dest_root.find("Collection")
+    collection.find("DataSetId").text = ""
+
+    ## DataGranule
+    version_id = dest_tree.find("GranuleUR").text[-3:]
+    data_granule = dest_root.find("DataGranule")
+    data_granule.find("DataGranuleSizeInBytes").text = "XYZ"
+    data_granule.find("ProducerGranuleId").text = dest_tree.find("GranuleUR").text[:-5]
+    data_granule.find("ProductionDateTime").text = "UPDATE HLS Prodution DATETIME"
+    data_granule.find("LocalVersionId").text = version_id
+
+    ## Temporal
+    temporal = dest_root.find("Temporal")
+    sensing_time1 = sensing_time[0].split("+")[0].replace(" ", "")[:-2]
+    sensing_time2 = sensing_time[-1].split("+")[-1].replace(" ", "")[:-2]
+
+    time1 = datetime.datetime.strptime(sensing_time1, time_format[:-1])
+    time2 = datetime.datetime.strptime(sensing_time2, time_format[:-1])
+    start_time = time1 if time1 < time2 else time2
+    end_time = time2 if time1 < time2 else time1
+    start_time = time1 if time1 < time2 else time2
+    end_time = time2 if time1 < time2 else time1
+
+    temporal.find("RangeDateTime").find("BeginningDateTime").text = start_time.strftime(
+        time_format
+    )
+    temporal.find("RangeDateTime").find("EndingDateTime").text = end_time.strftime(
+        time_format
+    )
+
+    ## write the HLS-Vi metadata
+    dest_tree.write(
+        hls_metadata.replace("HLS", "HLS-VI"), encoding="utf-8", xml_declaration=True
+    )
 
 
 # Returns a dictionary mapping satellite band names to common names.
@@ -118,6 +192,7 @@ def generate_vi_rasters(
     SPACECRAFT_NAME,
     TILE_ID,
     spatial_coverage,
+    xml_metadata_file,
 ):
     """
     Calculate and save VI rasters as separate COGs for the following spectral indices:
@@ -143,8 +218,6 @@ def generate_vi_rasters(
     nir = sr_ds["NIR"]
     swir1 = sr_ds["SWIR1"]
     swir2 = sr_ds["SWIR2"]
-
-    import numpy as np
 
     # The following spectral indices are common for both L30 and S30
     NDVI_ = (nir - red) / (nir + red)
@@ -174,8 +247,6 @@ def generate_vi_rasters(
 
     # Concatenate all long names into one string
     longname_str = ", ".join([f"{index}: {name}" for index, name in longname.items()])
-
-    import datetime
 
     # Define metadata attributes
     attributes = {
@@ -208,6 +279,11 @@ def generate_vi_rasters(
             index_raster = index_data.astype(np.int16)
         else:
             index_raster = (index_data * 1000).astype(np.int16)
+        with tempfile.NamedTemporaryFile() as tmp:
+            index_raster.rio.to_raster(
+                tmp.name, driver="COG", tags=attributes, compress="deflate"
+            )
+            generate_vi_metadata(tmp.name, xml_metadata_file)
         index_raster.rio.to_raster(
             path + fname + f".{index_name}.tif",
             driver="COG",
@@ -230,4 +306,5 @@ generate_vi_rasters(
     extracted_attributes.get("SPACECRAFT_NAME", None),
     extracted_attributes.get("TILE_ID", None),
     extracted_attributes.get("spatial_coverage", None),
+    xml_metadata_file="",
 )
