@@ -4,6 +4,7 @@ import xarray as xr
 import numpy as np
 import datetime
 import tempfile
+import xml.etree.ElementTree as ET
 
 """
 inputs:
@@ -20,13 +21,13 @@ outputs:
 bucket = "s3://hls-debug-output"
 run_id = "brad_test_samples"
 hls_granule_id = "HLS.L30.T06WVS.2024120T211159.v2.0"
-sr_key = f"{bucket}/{run_id}/{hls_granule_id}/{hls_granule_id}"
+# sr_key = f"{bucket}/{run_id}/{hls_granule_id}/{hls_granule_id}"
+sr_key = f"data/{hls_granule_id}"
 sat_id = hls_granule_id.split(".")[1]
-
 print(sr_key)
 
 
-def generate_vi_metadata(file1, file2):
+def generate_vi_metadata(file1, file2, metadata_name):
     """
     Function allows us to create the metadata file for the VI granules
 
@@ -62,7 +63,7 @@ def generate_vi_metadata(file1, file2):
 
     ## Collection
     collection = dest_root.find("Collection")
-    collection.find("DataSetId").text = ""
+    collection.find("DataSetId").text = metadata_name.replace("HLS", "HLS_VI")
 
     ## DataGranule
     version_id = dest_tree.find("GranuleUR").text[-3:]
@@ -93,7 +94,9 @@ def generate_vi_metadata(file1, file2):
 
     ## write the HLS-Vi metadata
     dest_tree.write(
-        hls_metadata.replace("HLS", "HLS-VI"), encoding="utf-8", xml_declaration=True
+        metadata_name.replace("HLS", "HLS_VI") + "_metadata.xml",
+        encoding="utf-8",
+        xml_declaration=True,
     )
 
 
@@ -273,6 +276,7 @@ def generate_vi_rasters(
         [NDVI_, NDWI_, NDMI_, NBR_, NBR2_, EVI_, SAVI_, MSAVI_, TVI_],
     ):
         index_longname = longname.get(index_name, "")
+        metadata_name = hls_granule_id + f"_{index_name}"
         if index_longname:
             attributes["longname"] = index_longname
         if index_name == "TVI":
@@ -283,7 +287,7 @@ def generate_vi_rasters(
             index_raster.rio.to_raster(
                 tmp.name, driver="COG", tags=attributes, compress="deflate"
             )
-            generate_vi_metadata(tmp.name, xml_metadata_file)
+            generate_vi_metadata(tmp.name, xml_metadata_file, metadata_name)
         index_raster.rio.to_raster(
             path + fname + f".{index_name}.tif",
             driver="COG",
@@ -306,5 +310,5 @@ generate_vi_rasters(
     extracted_attributes.get("SPACECRAFT_NAME", None),
     extracted_attributes.get("TILE_ID", None),
     extracted_attributes.get("spatial_coverage", None),
-    xml_metadata_file="G2963019115-LPCLOUD.xml",
+    xml_metadata_file="data/G2963019115-LPCLOUD.xml",
 )
