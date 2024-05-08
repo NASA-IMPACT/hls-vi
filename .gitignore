@@ -8,3 +8,9 @@ dist/
 build/
 *.egg-info
 .pytest_cache/
+
+*.tif
+*.png
+*.xml
+*.DS_Store
+

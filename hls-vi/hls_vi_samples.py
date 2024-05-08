@@ -21,8 +21,10 @@ outputs:
 
 start_time = time.time()
 
-input_bucket = "s3://vegetationindice"
-output_dir = "/Users/brad/Downloads/hls/hls_vi_sample/output20"
+# input_bucket = "s3://vegetationindice"
+input_bucket = "code/data"
+# output_dir = "/Users/brad/Downloads/hls/hls_vi_sample/output20"
+output_dir = "code/temp"
 hls_granule_id = "HLS.L30.T06WVS.2024120T211159.v2.0"
 run_id = "brad_test_samples"
 
@@ -63,7 +65,7 @@ start_time = time.time()
 # )
 
 
-def generate_vi_metadata(file1, file2, metadata_name):
+def generate_vi_metadata(file1, file2):
     """
     Function allows us to create the metadata file for the VI granules
 
@@ -75,7 +77,9 @@ def generate_vi_metadata(file1, file2, metadata_name):
     hls_metadata = file2
     dataset_tags = dataset.tags()
     ## extract metadata atribute
-    sensing_time = dataset_tags["HLS_PROCESSING_TIME"].split(";")
+    sensing_time = dataset_tags["HLS-VI_PROCESSING_TIME"].split(";")
+    # sensing_time = dataset_tags["SENSING_TIME"].split(";")
+    
 
     source_tree = ET.parse(hls_metadata)
 
@@ -92,18 +96,14 @@ def generate_vi_metadata(file1, file2, metadata_name):
 
     ## Temporal Values
     time_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-    dest_tree.find("InsertTime").text = datetime.datetime.now(datetime.UTC).strftime(
-        time_format
-    )
+    dest_tree.find("InsertTime").text = datetime.datetime.utcnow().strftime(time_format)
 
     # This needs to be updated to last update time of file
-    dest_tree.find("LastUpdate").text = datetime.datetime.now(datetime.UTC).strftime(
-        time_format
-    )
+    dest_tree.find("LastUpdate").text = datetime.datetime.utcnow().strftime(time_format)
 
     ## Collection
     collection = dest_root.find("Collection")
-    collection.find("DataSetId").text = metadata_name.replace("HLS", "HLS_VI")
+    collection.find("DataSetId").text =  "Update HLS-VI New Collection ID String"
 
     ## DataGranule
     version_id = dest_tree.find("GranuleUR").text[-3:]
@@ -133,17 +133,13 @@ def generate_vi_metadata(file1, file2, metadata_name):
     )
 
     ## write the HLS-Vi metadata
-    dest_tree.write(
-        metadata_name.replace("HLS", "HLS_VI") + "_metadata.xml",
-        encoding="utf-8",
-        xml_declaration=True,
-    )
-    return metadata_name
+    dest_tree.write(hls_metadata.replace("HLS", "HLS-VI"), encoding='utf-8', xml_declaration=True)
 
 
 def input_func(input_bucket, run_id, hls_granule_id, output_dir):
     global sr_key, sat_id, output_bucket
-    sr_key = f"{input_bucket}/{run_id}/{hls_granule_id}"
+    # sr_key = f"{input_bucket}/{run_id}/{hls_granule_id}"
+    sr_key = f"{input_bucket}/{hls_granule_id}"
     sat_id = hls_granule_id.split(".")[1]
     output_bucket = output_dir
 
@@ -173,6 +169,7 @@ sr_bands_common = get_common_band_names(sat_id)
     else print("Incorrect satellite id")
 )
 
+
 # Function to open file, read data, and extract metadata
 def open_file_and_extract_metadata(base, band, band_name):
     print(f"Reading {base}.{band}.tif")
@@ -186,14 +183,16 @@ def open_file_and_extract_metadata(base, band, band_name):
         metadata = {
             "ACCODE": src.tags()["ACCODE"],
             "cloud_coverage": src.tags().get("cloud_coverage", None),
-            "HORIZONTAL_CS_CODE": src.tags().get("HORIZONTAL_CS_CODE", None),
+            "HORIZONTAL_CS_NAME": src.tags().get("HORIZONTAL_CS_NAME", None),
             "MEAN_SUN_AZIMUTH_ANGLE": src.tags().get("MEAN_SUN_AZIMUTH_ANGLE", None),
             "MEAN_SUN_ZENITH_ANGLE": src.tags().get("MEAN_SUN_ZENITH_ANGLE", None),
             "MEAN_VIEW_AZIMUTH_ANGLE": src.tags().get("MEAN_VIEW_AZIMUTH_ANGLE", None),
             "MEAN_VIEW_ZENITH_ANGLE": src.tags().get("MEAN_VIEW_ZENITH_ANGLE", None),
             "NBAR_SOLAR_ZENITH": src.tags().get("NBAR_SOLAR_ZENITH", None),
             "SPACECRAFT_NAME": src.tags().get("SPACECRAFT_NAME", None),
-            "TILE_ID": src.tags().get("TILE_ID", None),
+            "TILE_ID": src.tags().get("SENTINEL2_TILEID", None),
+            "SENSING_TIME": src.tags().get("SENSING_TIME", None),
+            "SENSOR": src.tags().get("SENSOR", None),
             "spatial_coverage": src.tags().get("spatial_coverage", None),
         }
 
@@ -203,13 +202,13 @@ def open_file_and_extract_metadata(base, band, band_name):
 # Open dataset for each band and extract metadata
 if sr_bands_common is not None:
     common_bands = list(sr_bands_common.values())
-    sr_data = []
+    sr_data = {}
     metadata_list = []
     crs = None
     transform = None
     for band, band_name in sr_bands_common.items():
         data, metadata = open_file_and_extract_metadata(sr_key, band, band_name)
-        sr_data.append(data)
+        sr_data[band_name] = data
         metadata_list.append(metadata)
 
     with rasterio.open(f"{sr_key}.{band}.tif") as src:
@@ -220,8 +219,9 @@ if sr_bands_common is not None:
     extracted_attributes = {k: v for d in metadata_list for k, v in d.items()}
 
     # Stack the data arrays into an array
-    sr_ds = np.stack(sr_data, axis=-1)
-    print("Dataset shape:", sr_ds.shape)
+    # sr_ds = np.stack(sr_data, axis=-1)
+    sr_ds = sr_data
+    # print("Dataset shape:", sr_ds.shape)
 
     # Check if the extraction was successful and print the extracted attributes
     if extracted_attributes:
@@ -284,8 +284,6 @@ def generate_vi_rasters(
     sr_ds,
     hls_granule_id,
     sat_id,
-    xml_metadata_file,
-    metadata_name,
     **extracted_attributes,
 ):
     """
@@ -308,7 +306,7 @@ def generate_vi_rasters(
     green = sr_ds["G"]
     nir = sr_ds["NIR"]
     swir1 = sr_ds["SWIR1"]
-    swir2 = sr_ds[:"SWIR2"]
+    swir2 = sr_ds["SWIR2"]
 
     # Calculate spectral indices
     NDVI_ = (nir - red) / (nir + red)
@@ -347,7 +345,7 @@ def generate_vi_rasters(
         "longname": longname_str,
         "ACCODE": extracted_attributes.get("ACCODE", ""),
         "cloud_coverage": extracted_attributes.get("cloud_coverage", None),
-        "HORIZONTAL_CS_CODE": extracted_attributes.get("HORIZONTAL_CS_CODE", None),
+        "HORIZONTAL_CS_NAME": extracted_attributes.get("HORIZONTAL_CS_NAME", None),
         "MEAN_SUN_AZIMUTH_ANGLE": extracted_attributes.get(
             "MEAN_SUN_AZIMUTH_ANGLE", None
         ),
@@ -361,10 +359,11 @@ def generate_vi_rasters(
             "MEAN_VIEW_ZENITH_ANGLE", None
         ),
         "NBAR_SOLAR_ZENITH": extracted_attributes.get("NBAR_SOLAR_ZENITH", None),
-        "SPACECRAFT_NAME": extracted_attributes.get("SPACECRAFT_NAME", None),
         "TILE_ID": extracted_attributes.get("TILE_ID", None),
+        "SENSOR": extracted_attributes.get("SENSOR", None),
+        "SENSING_TIME": extracted_attributes.get("SENSING_TIME", None),
         "spatial_coverage": extracted_attributes.get("spatial_coverage", None),
-        "HLS_PROCESSING_TIME": datetime.datetime.now().strftime(
+        "HLS-VI_PROCESSING_TIME": datetime.datetime.now().strftime(
             "%Y-%m-%dT%H:%M:%S.%fZ"
         ),
     }
@@ -388,11 +387,11 @@ def generate_vi_rasters(
             scaled_data = (index_data * scale_factor).astype(np.int16)
         else:
             scaled_data = index_data.astype(np.int16)
-        with tempfile.NamedTemporaryFile() as tmp:
-            scaled_data.rasterio(
-                tmp.name, driver="COG", tags=attributes, compress="deflate"
-            )
-            generate_vi_metadata(tmp.name, xml_metadata_file, metadata_name)
+        # with tempfile.NamedTemporaryFile() as tmp:
+        #     scaled_data.rasterio(
+        #         tmp.name, driver="COG", tags=attributes, compress="deflate"
+        #     )
+        #     generate_vi_metadata(tmp.name, xml_metadata_file, metadata_name)
 
         # Save the raster using the save_raster function
         save_raster(
@@ -404,14 +403,17 @@ def generate_vi_rasters(
             compress="deflate",
         )
 
+    return index_output_path
 
-generate_vi_rasters(
+vi_granule_path = generate_vi_rasters(
     sr_ds,
     hls_granule_id,
     sat_id,
     **extracted_attributes,
 )
-
+generate_vi_metadata(
+    vi_granule_path, "code/data/HLS.L30.T06WVS.2024120T211159.v2.0.cmr.xml"
+)
 
 end_time = time.time()
 runtime = end_time - start_time
