@@ -65,7 +65,7 @@ start_time = time.time()
 # )
 
 
-def generate_vi_metadata(file1, file2):
+def generate_vi_metadata(vi_granule_file, size_of_vi_files, HLS_metadata_file):
     """
     Function allows us to create the metadata file for the VI granules
 
@@ -73,13 +73,12 @@ def generate_vi_metadata(file1, file2):
         file1: HLS-VI granule
         file2: XML metadata file for the original HLS granule.
     """
-    dataset = rasterio.open(file1)
-    hls_metadata = file2
+    dataset = rasterio.open(vi_granule_file)
+    hls_metadata = HLS_metadata_file
     dataset_tags = dataset.tags()
     ## extract metadata atribute
     sensing_time = dataset_tags["HLS-VI_PROCESSING_TIME"].split(";")
     # sensing_time = dataset_tags["SENSING_TIME"].split(";")
-    
 
     source_tree = ET.parse(hls_metadata)
 
@@ -103,12 +102,12 @@ def generate_vi_metadata(file1, file2):
 
     ## Collection
     collection = dest_root.find("Collection")
-    collection.find("DataSetId").text =  "Update HLS-VI New Collection ID String"
+    collection.find("DataSetId").text = "Update HLS-VI New Collection ID String"
 
     ## DataGranule
     version_id = dest_tree.find("GranuleUR").text[-3:]
     data_granule = dest_root.find("DataGranule")
-    data_granule.find("DataGranuleSizeInBytes").text = "XYZ"
+    data_granule.find("DataGranuleSizeInBytes").text = str(size_of_vi_files)
     data_granule.find("ProducerGranuleId").text = dest_tree.find("GranuleUR").text[:-5]
     data_granule.find("ProductionDateTime").text = "UPDATE HLS Prodution DATETIME"
     data_granule.find("LocalVersionId").text = version_id
@@ -133,7 +132,9 @@ def generate_vi_metadata(file1, file2):
     )
 
     ## write the HLS-Vi metadata
-    dest_tree.write(hls_metadata.replace("HLS", "HLS-VI"), encoding='utf-8', xml_declaration=True)
+    dest_tree.write(
+        hls_metadata.replace("HLS", "HLS-VI"), encoding="utf-8", xml_declaration=True
+    )
 
 
 def input_func(input_bucket, run_id, hls_granule_id, output_dir):
@@ -369,6 +370,7 @@ def generate_vi_rasters(
     }
 
     # Save rasters
+    file_size = 0
     for index_name, index_data in zip(
         ["NDVI", "NDWI", "NDMI", "NBR", "NBR2", "EVI", "SAVI", "MSAVI", "TVI"],
         [NDVI_, NDWI_, NDMI_, NBR_, NBR2_, EVI_, SAVI_, MSAVI_, TVI_],
@@ -391,7 +393,6 @@ def generate_vi_rasters(
         #     scaled_data.rasterio(
         #         tmp.name, driver="COG", tags=attributes, compress="deflate"
         #     )
-        #     generate_vi_metadata(tmp.name, xml_metadata_file, metadata_name)
 
         # Save the raster using the save_raster function
         save_raster(
@@ -402,17 +403,21 @@ def generate_vi_rasters(
             tags=attributes,
             compress="deflate",
         )
+        file_size += os.stat(index_output_path).st_size
 
-    return index_output_path
+    return index_output_path, file_size
 
-vi_granule_path = generate_vi_rasters(
+
+vi_granule_path, size_of_file = generate_vi_rasters(
     sr_ds,
     hls_granule_id,
     sat_id,
     **extracted_attributes,
 )
 generate_vi_metadata(
-    vi_granule_path, "code/data/HLS.L30.T06WVS.2024120T211159.v2.0.cmr.xml"
+    vi_granule_path,
+    size_of_file,
+    "code/data/HLS.L30.T06WVS.2024120T211159.v2.0.cmr.xml",
 )
 
 end_time = time.time()
