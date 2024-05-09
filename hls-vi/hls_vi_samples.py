@@ -175,10 +175,12 @@ sr_bands_common = get_common_band_names(sat_id)
 def open_file_and_extract_metadata(base, band, band_name):
     print(f"Reading {base}.{band}.tif")
     with rasterio.open(f"{base}.{band}.tif") as src:
-        data = src.read(1, masked=True)  # Read the data with masking
+        data = src.read(1, masked=True) * 0.0001  # Read the data with masking
         data.name = band_name
         if src.nodata is not None:
             data = np.ma.masked_equal(data, src.nodata)  # Mask the NoData values
+
+        data = np.ma.masked_less(data, 0)
 
         # Extract metadata attributes
         metadata = {
@@ -386,7 +388,7 @@ def generate_vi_rasters(
         # Scale and convert the data to int16 if the index is not "TVI"
         if index_name != "TVI":
             scale_factor = 10000
-            scaled_data = (index_data * scale_factor).astype(np.int16)
+            scaled_data = np.round(index_data * scale_factor).astype(np.int16)
         else:
             scaled_data = index_data.astype(np.int16)
         # with tempfile.NamedTemporaryFile() as tmp:
