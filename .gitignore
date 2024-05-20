@@ -1,0 +1,17 @@
+*.pyc
+*.pyo
+__pycache__/
+devenv/
+.vscode/
+.tox/
+dist/
+build/
+*.egg-info
+.pytest_cache/
+
+
+*.png
+*.xml
+*.DS_Store
+
+.ipynb_checkpoints/
