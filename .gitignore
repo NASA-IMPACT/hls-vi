@@ -10,7 +10,6 @@ build/
 .pytest_cache/
 
 
-*.tif
 *.png
 *.xml
 *.DS_Store
