@@ -1,9 +1,13 @@
-# hls-vi
+# HLS Vegetation Indices (HLS-VI)
 
-## Generate Suite of Vegetation Indices for HLS Products
+Generates suite of Vegetation Indices (VI) for HLS Products.
 
 ## Usage
 
-### Tests
+## Tests
 
-### Development
+You can run tests using Docker:
+
+```bash
+docker compose run --build tox
+```
