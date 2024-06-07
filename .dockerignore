@@ -1,0 +1,5 @@
+*
+!hls_vi/
+!tests/
+!setup.py
+!tox.ini
