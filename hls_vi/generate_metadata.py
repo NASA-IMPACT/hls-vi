@@ -9,7 +9,7 @@ from typing import Tuple
 import rasterio
 
 
-def generate_cmr_metadata(input_dir: Path, output_dir: Path):
+def generate_metadata(input_dir: Path, output_dir: Path):
     """
     Create CMR XML metadata file for an HLS VI granule.
 
@@ -42,10 +42,7 @@ def generate_cmr_metadata(input_dir: Path, output_dir: Path):
     tree.find("Collection/DataSetId").text = "Update HLS-VI New Collection ID String"
 
     data_granule = tree.find("DataGranule")
-    # TODO compute sum of sizes of VI files
-    data_granule.find("DataGranuleSizeInBytes").text = str(
-        sum(tif.stat().st_size for tif in output_dir.glob("*.tif"))
-    )
+    data_granule.remove(data_granule.find("DataGranuleSizeInBytes"))
     data_granule.find("ProductionDateTime").text = processing_time
     producer_granule_id = data_granule.find("ProducerGranuleId")
     producer_granule_id.text = producer_granule_id.text.replace("HLS", "HLS-VI")
@@ -91,7 +88,7 @@ def parse_args() -> Tuple[Path, Path]:
 
 def main():
     input_dir, output_dir = parse_args()
-    generate_cmr_metadata(input_dir=input_dir, output_dir=output_dir)
+    generate_metadata(input_dir=input_dir, output_dir=output_dir)
 
 
 if __name__ == "__main__":

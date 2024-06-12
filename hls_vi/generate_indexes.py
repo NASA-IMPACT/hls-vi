@@ -1,10 +1,13 @@
+# pyright: reportAttributeAccessIssue=false, reportOperatorIssue=false
+
 import getopt
 import os
 import re
 import sys
 from datetime import datetime, timezone
-from enum import Enum
-from typing import Mapping, Optional, Tuple
+from enum import Enum, unique
+from pathlib import Path
+from typing import Callable, Mapping, Optional, Tuple, Type
 from typing_extensions import TypeAlias
 
 import matplotlib.pyplot as plt
@@ -13,22 +16,16 @@ import rasterio
 import rasterio.crs
 import rasterio.transform
 
-"""
-inputs:
-       HLS granule id
+from dataclasses import dataclass
 
-outputs:
-       Normalized Difference Vegetation Index, Normalized Difference Water Index,
-       Normalized Difference Water Index, Normalized Burn Ratio,
-       Normalized Burn Ration 2, Enhanced Vegetation Index,
-       Soil-Adjusted Vegetation Index, Modified Soil-Adjusted Vegetation Index,
-       Triangular Vegetation Index
-"""
 
 Tags: TypeAlias = Mapping[str, Optional[str]]
+BandData: TypeAlias = Mapping["Band", np.ndarray]
+IndexFunction = Callable[[BandData], np.ndarray]
 
 
-class HarmonizedBand(Enum):
+@unique
+class Band(Enum):
     B = "B"
     G = "G"
     R = "R"
@@ -36,89 +33,117 @@ class HarmonizedBand(Enum):
     SWIR1 = "SWIR1"
     SWIR2 = "SWIR2"
 
+
+class InstrumentBand(Enum):
+    pass
+
+
+@unique
+class L30Band(InstrumentBand):
+    B02 = Band.B
+    B03 = Band.G
+    B04 = Band.R
+    B05 = Band.NIR
+    B06 = Band.SWIR1
+    B07 = Band.SWIR2
+
+
+@unique
+class S30Band(InstrumentBand):
+    B02 = Band.B
+    B03 = Band.G
+    B04 = Band.R
+    B8A = Band.NIR
+    B11 = Band.SWIR1
+    B12 = Band.SWIR2
+
+
+class Instrument(Enum):
+    L30 = L30Band
+    S30 = S30Band
+
+    def __init__(self, band_type: Type[InstrumentBand]) -> None:
+        self.bands = list(band_type)
+
     @classmethod
-    def from_instrument_band(cls, instrument_band: str) -> "HarmonizedBand":
-        return {
-            "B02": cls.B,
-            "B03": cls.G,
-            "B04": cls.R,
-            "B05": cls.NIR,
-            "B06": cls.SWIR1,
-            "B07": cls.SWIR2,
-            "B8A": cls.NIR,
-            "B11": cls.SWIR1,
-            "B12": cls.SWIR2,
-        }[instrument_band]
+    def named(cls, name: str) -> "Instrument":
+        for instrument in cls:
+            if instrument.name == name:
+                return instrument
+
+        raise ValueError(f"Invalid instrument name: {name}")
 
 
-class IndexKind(Enum):
-    EVI = "Enhanced Vegetation Index"
-    MSAVI = "Modified Soil-Adjusted Vegetation Index"
-    NBR = "Normalized Burn Ratio"
-    NBR2 = "Normalized Burn Ratio 2"
-    NDMI = "Normalized Difference Moisture Index"
-    NDVI = "Normalized Difference Vegetation Index"
-    NDWI = "Normalized Difference Water Index"
-    SAVI = "Soil-Adjusted Vegetation Index"
-    TVI = "Triangular Vegetation Index"
+@dataclass
+class GranuleId:
+    instrument: Instrument
+    tile_id: str
+    acquisition_date: str
+    version: str
+
+    @classmethod
+    def from_string(cls, granule_id: str) -> "GranuleId":
+        # Assume granule_id is formatted as follows, where {version} may contain dots:
+        # HLS.{instrument}.{tile_id}.{acquisition_date}.{version}
+        match = re.match(
+            r"HLS[.](?P<instrument>[^.]+)[.](?P<tile_id>[^.]+)[.]"
+            r"(?P<acquisition_date>[^.]+)[.](?P<version>.+)",
+            granule_id,
+        )
+
+        if not match:
+            raise ValueError(f"Invalid granule ID: {granule_id}")
+
+        return GranuleId(
+            Instrument.named(match["instrument"]),
+            match["tile_id"],
+            match["acquisition_date"],
+            match["version"],
+        )
+
+    def __str__(self) -> str:
+        return ".".join(
+            [
+                "HLS",
+                self.instrument.name,
+                self.tile_id,
+                self.acquisition_date,
+                self.version,
+            ]
+        )
 
 
-def generate_indexes(*, input_dir: str, output_dir: str):
-    granule_id = os.path.basename(input_dir)
-    crs, transform, tags, bands_data = read_bands(input_dir)
-    indexes = compute_indexes(
-        **{band.name.lower(): data for band, data in bands_data.items()}
-    )
-    write_indexes(output_dir, granule_id, crs, transform, tags, indexes)
+@dataclass
+class Granule:
+    id_: GranuleId
+    crs: rasterio.crs.CRS
+    transform: rasterio.transform.Affine
+    tags: Tags
+    data: BandData
 
 
-def parse_granule_id(granule_id: str) -> Tuple[str, str, str, str]:
-    # Assume granule_id is formatted as follows, where {version} may contain dots:
-    # HLS.{instrument}.{tile_id}.{acquisition_date}.{version}
-    match = re.match(
-        r"HLS[.](?P<instrument>[^.]+)[.](?P<tile_id>[^.]+)[.]"
-        r"(?P<acquisition_date>[^.]+)[.](?P<version>.+)",
-        granule_id,
-    )
+def read_granule_bands(input_dir: Path) -> Granule:
+    id_ = GranuleId.from_string(os.path.basename(input_dir))
+    filenames = [f"{id_}.{band.name}.tif" for band in id_.instrument.bands]
+    data = [read_band(input_dir / filename) for filename in filenames]
+    harmonized_bands = [band.value for band in id_.instrument.bands]
 
-    if not match:
-        raise ValueError(f"Invalid granule ID: {granule_id}")
-
-    return (
-        match["instrument"],
-        match["tile_id"],
-        match["acquisition_date"],
-        match["version"],
-    )
-
-
-def read_bands(
-    input_dir: str,
-) -> Tuple[
-    rasterio.crs.CRS,
-    rasterio.transform.Affine,
-    Tags,
-    Mapping[HarmonizedBand, np.ndarray],
-]:
-    tif_paths = [
-        os.path.join(input_dir, filename)
-        for filename in os.listdir(input_dir)
-        if filename.endswith(".tif")
-    ]
-
-    # All bands have the same CRS, transform, and tags, so we can use the first one to
+    # Every band has the same CRS, transform, and tags, so we can use the first one to
     # get this information.
-    with rasterio.open(tif_paths[0]) as tif:
+    with rasterio.open(input_dir / filenames[0]) as tif:
         crs = tif.crs
         transform = tif.transform
-        tags = tif.tags()
+        tags = select_tags(tif.tags())
 
-    return (
-        crs,
-        transform,
-        select_tags(tags),
-        dict(map(read_band, tif_paths)),
-    )
+    return Granule(id_, crs, transform, tags, dict(zip(harmonized_bands, data)))
+
+
+def read_band(tif_path: Path) -> np.ndarray:
+    with rasterio.open(tif_path) as tif:
+        data = tif.read(1, masked=True) / 10_000
+
+    # Clamp surface reflectance values to the range [0, 1].
+    return np.ma.masked_outside(data, 0, 1)
 
 
 def select_tags(tags: Tags) -> Tags:
@@ -148,90 +173,35 @@ def select_tags(tags: Tags) -> Tags:
     }
 
 
-def read_band(tif_path: str) -> Tuple[HarmonizedBand, np.ndarray]:
-    *_, band_name, _ext = os.path.basename(tif_path).split(".")
-    harmonized_band = HarmonizedBand.from_instrument_band(band_name)
-
-    with rasterio.open(tif_path) as tif:
-        data = tif.read(1, masked=True) * 0.0001
-        data.name = harmonized_band.name
-
-    return harmonized_band, np.ma.masked_less(data, 0)
-
-
-def compute_indexes(
-    *,
-    b: np.ndarray,
-    g: np.ndarray,
-    r: np.ndarray,
-    nir: np.ndarray,
-    swir1: np.ndarray,
-    swir2: np.ndarray,
-) -> Mapping[IndexKind, np.ndarray]:
-    indexes_except_tvi: Mapping[IndexKind, np.ndarray] = {
-        IndexKind.EVI: 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1),
-        IndexKind.MSAVI: np.where(
-            (2 * nir + 1) ** 2 - 8 * (nir - r) >= 0,  # type: ignore
-            (2 * nir + 1 - np.sqrt((2 * nir + 1) ** 2 - 8 * (nir - r))) / 2,  # type: ignore  # noqa: E501
-            np.nan,
-        ),
-        IndexKind.NBR: (nir - swir2) / (nir + swir2),
-        IndexKind.NBR2: (swir1 - swir2) / (swir1 + swir2),
-        IndexKind.NDMI: (nir - swir1) / (nir + swir1),
-        IndexKind.NDVI: (nir - r) / (nir + r),
-        IndexKind.NDWI: (g - nir) / (g + nir),
-        IndexKind.SAVI: 1.5 * (nir - r) / (nir + r + 0.5),
-    }
-
-    scaled_indexes: Mapping[IndexKind, np.ndarray] = {
-        **{kind: np.round(data * 10_000) for kind, data in indexes_except_tvi.items()},
-        IndexKind.TVI: ((120 * (nir - g) - 200 * (r - g)) / 2),  # type: ignore
-    }
-
-    return {kind: data.astype(np.int16) for kind, data in scaled_indexes.items()}  # type: ignore   # noqa: E501
-
-
-def write_indexes(
-    output_dir: str,
-    granule_id: str,
-    crs: rasterio.crs.CRS,
-    transform: rasterio.transform.Affine,
-    tags: Tags,
-    indexes: Mapping[IndexKind, np.ndarray],
-):
+def write_granule_indexes(output_dir: Path, granule: Granule):
     os.makedirs(output_dir, exist_ok=True)
     processing_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    instrument, tile_id, acquisition_date, version = parse_granule_id(granule_id)
 
-    for kind, data in indexes.items():
-        filename = f"HLS-VI.{instrument}.{tile_id}.{acquisition_date}.{version}.{kind.name}.tif"  # noqa: E501
-        output_path = os.path.join(output_dir, filename)
-        index_tags = {
-            **tags,
-            "longname": kind.value,
-            "HLS-VI_PROCESSING_TIME": processing_time,
-        }
+    for index in Index:
+        output_path = output_dir / ".".join(
+            [
+                "HLS-VI",
+                granule.id_.instrument.name,
+                granule.id_.tile_id,
+                granule.id_.acquisition_date,
+                granule.id_.version,
+                index.name,
+                "tif",
+            ]
+        )
 
-        write_index(output_path, crs, transform, index_tags, data)
+        write_granule_index(output_path, granule, index, processing_time)
 
 
-def write_index(
-    output_path: str,
-    crs: rasterio.crs.CRS,
-    transform: rasterio.transform.Affine,
-    tags: Tags,
-    data: np.ndarray,
+def write_granule_index(
+    output_path: Path,
+    granule: Granule,
+    index: "Index",
+    processing_time: str,
 ):
-    """
-    Save raster data to a GeoTIFF file using rasterio.
+    """Save raster data to a GeoTIFF file using rasterio."""
 
-    Args:
-        output_path: Output file path for the GeoTIFF file.
-        data: NumPy array containing raster data.
-        transform: Affine transform object defining the transformation.
-        crs: Coordinate reference system for the raster.
-        tags: Mapping of tags to include in the GeoTIFF file.
-    """
+    data = index(granule.data)
 
     with rasterio.open(
         output_path,
@@ -242,19 +212,101 @@ def write_index(
         height=data.shape[0],
         count=1,
         dtype=data.dtype,
-        crs=crs,
-        transform=transform,
+        crs=granule.crs,
+        transform=granule.transform,
     ) as dst:
         dst.write(data, 1)
-        dst.update_tags(**tags)
+        dst.update_tags(
+            **granule.tags,
+            longname=index.value,
+            HLS_VI_PROCESSING_TIME=processing_time,
+        )
 
-    # Creat browse image using NDVI
-    if "NDVI" in output_path:
-        browse = output_path.replace(".tif", ".png")
-        plt.imsave(browse, data, dpi=300, cmap="gray")
+    # Create browse image using NDVI
+    if index == Index.NDVI:
+        plt.imsave(str(output_path.with_suffix(".png")), data, dpi=300, cmap="gray")
 
 
-def parse_args() -> Tuple[str, str]:
+def evi(data: BandData) -> np.ndarray:
+    b, r, nir = data[Band.B], data[Band.R], data[Band.NIR]
+    return np.round(10_000 * 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1))
+
+
+def msavi(data: BandData) -> np.ndarray:
+    r, nir = data[Band.R], data[Band.NIR]
+
+    return np.round(
+        10_000
+        * np.where(
+            (2 * nir + 1) ** 2 - 8 * (nir - r) >= 0,
+            (2 * nir + 1 - np.sqrt((2 * nir + 1) ** 2 - 8 * (nir - r))) / 2,
+            np.nan,
+        )
+    )
+
+
+def nbr(data: BandData) -> np.ndarray:
+    nir, swir2 = data[Band.NIR], data[Band.SWIR2]
+    return np.round(10_000 * (nir - swir2) / (nir + swir2))
+
+
+def nbr2(data: BandData) -> np.ndarray:
+    swir1, swir2 = data[Band.SWIR1], data[Band.SWIR2]
+    return np.round(10_000 * (swir1 - swir2) / (swir1 + swir2))
+
+
+def ndmi(data: BandData) -> np.ndarray:
+    nir, swir1 = data[Band.NIR], data[Band.SWIR1]
+    return np.round(10_000 * (nir - swir1) / (nir + swir1))
+
+
+def ndvi(data: BandData) -> np.ndarray:
+    r, nir = data[Band.R], data[Band.NIR]
+    return np.round(10_000 * (nir - r) / (nir + r))
+
+
+def ndwi(data: BandData) -> np.ndarray:
+    g, nir = data[Band.G], data[Band.NIR]
+    return np.round(10_000 * (g - nir) / (g + nir))
+
+
+def savi(data: BandData) -> np.ndarray:
+    r, nir = data[Band.R], data[Band.NIR]
+    return np.round(10_000 * 1.5 * (nir - r) / (nir + r + 0.5))
+
+
+def tvi(data: BandData) -> np.ndarray:
+    g, r, nir = data[Band.G], data[Band.R], data[Band.NIR]
+    # We do NOT multiply by 10_000 and round like we do for other indexes.
+    return (120 * (nir - g) - 200 * (r - g)) / 2  # pyright: ignore[reportReturnType]
+
+
+class Index(Enum):
+    EVI = "Enhanced Vegetation Index"
+    MSAVI = "Modified Soil-Adjusted Vegetation Index"
+    NBR = "Normalized Burn Ratio"
+    NBR2 = "Normalized Burn Ratio 2"
+    NDMI = "Normalized Difference Moisture Index"
+    NDVI = "Normalized Difference Vegetation Index"
+    NDWI = "Normalized Difference Water Index"
+    SAVI = "Soil-Adjusted Vegetation Index"
+    TVI = "Triangular Vegetation Index"
+
+    def __init__(self, longname: str) -> None:
+        function_name = self.name.lower()
+        index_function: Optional[IndexFunction] = globals().get(function_name)
+
+        if not index_function or not callable(index_function):
+            raise ValueError(f"Index function not found: {function_name}")
+
+        self.longname = longname
+        self.compute_index = index_function
+
+    def __call__(self, data: BandData) -> np.ndarray:
+        return self.compute_index(data).astype(np.int16)
+
+
+def parse_args() -> Tuple[Path, Path]:
     short_options = "i:o:"
     long_options = ["inputdir=", "outputdir="]
     command = os.path.basename(sys.argv[0])
@@ -280,12 +332,13 @@ def parse_args() -> Tuple[str, str]:
         print(help_text, file=sys.stderr)
         sys.exit(2)
 
-    return input_dir, output_dir
+    return Path(input_dir), Path(output_dir)
 
 
 def main():
     input_dir, output_dir = parse_args()
-    generate_indexes(input_dir=input_dir, output_dir=output_dir)
+    granule = read_granule_bands(input_dir)
+    write_granule_indexes(output_dir, granule)
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ where:
 ### Generating CMR Metadata
 
 ```plain
-vi_generate_cmr_metadata -i INPUT_DIR -o OUTPUT_DIR
+vi_generate_metadata -i INPUT_DIR -o OUTPUT_DIR
 ```
 
 where:

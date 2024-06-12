@@ -5,8 +5,8 @@ import os
 
 import pytest
 import rasterio
-from hls_vi.generate_cmr_metadata import generate_cmr_metadata
-from hls_vi.generate_indexes import generate_indexes
+from hls_vi.generate_metadata import generate_metadata
+from hls_vi.generate_indexes import read_granule_bands, write_granule_indexes
 
 
 def tifs_equal(tif1: Path, tif2: Path):
@@ -65,11 +65,7 @@ def assert_indexes_equal(actual_dir: Path, expected_dir: Path):
     ],
 )
 def test_generate_indexes(input_dir, tmp_path: Path):
-    generate_indexes(
-        input_dir=input_dir,
-        output_dir=str(tmp_path),
-    )
-
+    write_granule_indexes(tmp_path, read_granule_bands(Path(input_dir)))
     assert_indexes_equal(tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
 
 
@@ -98,7 +94,7 @@ def test_generate_cmr_metadata(input_dir, output_dir):
     expected_metadata_path = Path("tests/fixtures") / output_cmr_xml_basename
 
     try:
-        generate_cmr_metadata(input_dir=input_path, output_dir=output_path)
+        generate_metadata(input_dir=input_path, output_dir=output_path)
 
         actual_metadata_tree = remove_datetime_elements(ET.parse(actual_metadata_path))
         expected_metadata_tree = remove_datetime_elements(
@@ -115,4 +111,5 @@ def test_generate_cmr_metadata(input_dir, output_dir):
             actual_metadata.getvalue().decode() == expected_metadata.getvalue().decode()
         )
     finally:
-        actual_metadata_path.unlink()
+        if actual_metadata_path.exists():
+            actual_metadata_path.unlink()

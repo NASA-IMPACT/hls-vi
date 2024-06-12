@@ -14,7 +14,7 @@ setup(
     entry_points={
         "console_scripts": [
             "vi_generate_indexes=hls_vi.generate_indexes:main",
-            "vi_generate_cmr_metadata=hls_vi.generate_cmr_metadata:main",
+            "vi_generate_metadata=hls_vi.generate_metadata:main",
         ],
     },
 )

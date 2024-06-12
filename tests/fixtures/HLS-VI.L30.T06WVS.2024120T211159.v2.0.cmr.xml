@@ -7,7 +7,6 @@
     <DataSetId>Update HLS-VI New Collection ID String</DataSetId>
   </Collection>
   <DataGranule>
-    <DataGranuleSizeInBytes>209288082</DataGranuleSizeInBytes>
     <ProducerGranuleId>HLS-VI.L30.T06WVS.2024120T211159</ProducerGranuleId>
     <DayNightFlag>DAY</DayNightFlag>
     <ProductionDateTime>UPDATE HLS Prodution DATETIME</ProductionDateTime>
