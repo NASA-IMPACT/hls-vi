@@ -124,13 +124,17 @@ class Granule:
 
 def read_granule_bands(input_dir: Path) -> Granule:
     id_ = GranuleId.from_string(os.path.basename(input_dir))
-    filenames = [f"{id_}.{band.name}.tif" for band in id_.instrument.bands]
-    data = [read_band(input_dir / filename) for filename in filenames]
+
+    with rasterio.open(input_dir / f"{id_}.Fmask.tif") as tif:
+        fmask = tif.read(1, masked=False)
+
+    tifnames = [f"{id_}.{band.name}.tif" for band in id_.instrument.bands]
+    data = [apply_fmask(read_band(input_dir / tifname), fmask) for tifname in tifnames]
     harmonized_bands = [band.value for band in id_.instrument.bands]
 
     # Every band has the same CRS, transform, and tags, so we can use the first one to
     # get this information.
-    with rasterio.open(input_dir / filenames[0]) as tif:
+    with rasterio.open(input_dir / tifnames[0]) as tif:
         crs = tif.crs
         transform = tif.transform
         tags = select_tags(tif.tags())
@@ -144,6 +148,14 @@ def read_band(tif_path: Path) -> np.ma.masked_array:
 
     # Clamp surface reflectance values to the range [0, 1].
     return np.ma.masked_outside(data, 0, 1)
+
+
+def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
+    # Per Table 9 in https://lpdaac.usgs.gov/documents/1698/HLS_User_Guide_V2.pdf
+    # we wish to mask data where the Fmask has any one of the following bits set:
+    # cloud shadow (bit 3), adjacent to cloud/shadow (bit 2), cloud (bit 1).
+    cloud_like = int("00001110", 2)
+    return np.ma.masked_array(data, fmask & cloud_like != 0)
 
 
 def select_tags(tags: Tags) -> Tags:
