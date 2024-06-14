@@ -1,5 +1,6 @@
 from pathlib import Path
 from xml.etree import ElementTree as ET
+import contextlib
 import io
 import os
 
@@ -26,18 +27,25 @@ def tifs_equal(tif1: Path, tif2: Path):
         )
 
 
+def remove_element(root: ET.Element, path: str) -> None:
+    parent_path = "/".join(path.split("/")[:-1])
+    parent = root.find(parent_path)
+    child = root.find(path)
+
+    assert parent is not None
+    assert child is not None
+
+    parent.remove(child)
+
+
 def remove_datetime_elements(tree: ET.ElementTree) -> ET.ElementTree:
     root = tree.getroot()
 
-    root.remove(tree.find("./InsertTime"))
-    root.remove(tree.find("./LastUpdate"))
-
-    data_granule = root.find("./DataGranule")
-    data_granule.remove(data_granule.find("./ProductionDateTime"))
-
-    range_date_time = root.find("./Temporal/RangeDateTime")
-    range_date_time.remove(range_date_time.find("./BeginningDateTime"))
-    range_date_time.remove(range_date_time.find("./EndingDateTime"))
+    remove_element(root, "./InsertTime")
+    remove_element(root, "./LastUpdate")
+    remove_element(root, "./DataGranule/ProductionDateTime")
+    remove_element(root, "./Temporal/RangeDateTime/BeginningDateTime")
+    remove_element(root, "./Temporal/RangeDateTime/EndingDateTime")
 
     return tree
 
@@ -73,11 +81,10 @@ def test_generate_indices(input_dir, tmp_path: Path):
             "tests/fixtures/HLS.L30.T06WVS.2024120T211159.v2.0",
             "tests/fixtures/HLS-VI.L30.T06WVS.2024120T211159.v2.0",
         ),
-        # TODO: Create tests/fixtures/HLS-VI.S30.T13RCN.2024128T173909.v2.0/HLS-VI.S30.T13RCN.2024128T173909.v2.0.cmr.xml  # noqa: E501
-        # (
-        #     "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
-        #     "tests/fixtures/HLS-VI.S30.T13RCN.2024128T173909.v2.0",
-        # ),
+        (
+            "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
+            "tests/fixtures/HLS-VI.S30.T13RCN.2024128T173909.v2.0",
+        ),
     ],
 )
 def test_generate_cmr_metadata(input_dir, output_dir):
@@ -108,5 +115,5 @@ def test_generate_cmr_metadata(input_dir, output_dir):
             actual_metadata.getvalue().decode() == expected_metadata.getvalue().decode()
         )
     finally:
-        if actual_metadata_path.exists():
+        with contextlib.suppress(FileNotFoundError):
             actual_metadata_path.unlink()
