@@ -250,6 +250,8 @@ def write_granule_index(
         transform=granule.transform,
         nodata=data.fill_value,
     ) as dst:
+        dst.offsets = (0.0,)
+        dst.scales = (index.scale_factor,)
         dst.write(data.filled(), 1)
         dst.update_tags(
             **granule.tags,
