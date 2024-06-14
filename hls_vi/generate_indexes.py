@@ -20,8 +20,8 @@ from dataclasses import dataclass
 
 
 Tags: TypeAlias = Mapping[str, Optional[str]]
-BandData: TypeAlias = Mapping["Band", np.ndarray]
-IndexFunction = Callable[[BandData], np.ndarray]
+BandData: TypeAlias = Mapping["Band", np.ma.masked_array]
+IndexFunction = Callable[[BandData], np.ma.masked_array]
 
 
 @unique
@@ -138,9 +138,9 @@ def read_granule_bands(input_dir: Path) -> Granule:
     return Granule(id_, crs, transform, tags, dict(zip(harmonized_bands, data)))
 
 
-def read_band(tif_path: Path) -> np.ndarray:
+def read_band(tif_path: Path) -> np.ma.masked_array:
     with rasterio.open(tif_path) as tif:
-        data = tif.read(1, masked=True) / 10_000
+        data = tif.read(1, masked=True, fill_value=-9999) / 10_000
 
     # Clamp surface reflectance values to the range [0, 1].
     return np.ma.masked_outside(data, 0, 1)
@@ -214,8 +214,9 @@ def write_granule_index(
         dtype=data.dtype,
         crs=granule.crs,
         transform=granule.transform,
+        nodata=data.fill_value,
     ) as dst:
-        dst.write(data, 1)
+        dst.write(data.filled(), 1)
         dst.update_tags(
             **granule.tags,
             longname=index.value,
@@ -224,61 +225,62 @@ def write_granule_index(
 
     # Create browse image using NDVI
     if index == Index.NDVI:
-        plt.imsave(str(output_path.with_suffix(".png")), data, dpi=300, cmap="gray")
+        plt.imsave(str(output_path.with_suffix(".jpeg")), data, dpi=300, cmap="gray")
 
 
-def evi(data: BandData) -> np.ndarray:
+def evi(data: BandData) -> np.ma.masked_array:
     b, r, nir = data[Band.B], data[Band.R], data[Band.NIR]
-    return np.round(10_000 * 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1))
+    return 10_000 * 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1)  # type: ignore
 
 
-def msavi(data: BandData) -> np.ndarray:
+def msavi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
+    sqrt_term = (2 * nir + 1) ** 2 - 8 * (nir - r)  # type: ignore
 
-    return np.round(
-        10_000
-        * np.where(
-            (2 * nir + 1) ** 2 - 8 * (nir - r) >= 0,
-            (2 * nir + 1 - np.sqrt((2 * nir + 1) ** 2 - 8 * (nir - r))) / 2,
-            np.nan,
-        )
+    result: np.ma.masked_array = 10_000 * np.ma.where(
+        sqrt_term >= 0,
+        (2 * nir + 1 - np.sqrt(sqrt_term)) / 2,  # type: ignore
+        np.nan,
     )
+    result.fill_value = r.fill_value
+
+    return result
 
 
-def nbr(data: BandData) -> np.ndarray:
+def nbr(data: BandData) -> np.ma.masked_array:
     nir, swir2 = data[Band.NIR], data[Band.SWIR2]
-    return np.round(10_000 * (nir - swir2) / (nir + swir2))
+    return 10_000 * (nir - swir2) / (nir + swir2)  # type: ignore
 
 
-def nbr2(data: BandData) -> np.ndarray:
+def nbr2(data: BandData) -> np.ma.masked_array:
     swir1, swir2 = data[Band.SWIR1], data[Band.SWIR2]
-    return np.round(10_000 * (swir1 - swir2) / (swir1 + swir2))
+    return 10_000 * (swir1 - swir2) / (swir1 + swir2)  # type: ignore
 
 
-def ndmi(data: BandData) -> np.ndarray:
+def ndmi(data: BandData) -> np.ma.masked_array:
     nir, swir1 = data[Band.NIR], data[Band.SWIR1]
-    return np.round(10_000 * (nir - swir1) / (nir + swir1))
+    return 10_000 * (nir - swir1) / (nir + swir1)  # type: ignore
 
 
-def ndvi(data: BandData) -> np.ndarray:
+def ndvi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    return np.round(10_000 * (nir - r) / (nir + r))
+    return 10_000 * (nir - r) / (nir + r)  # type: ignore
 
 
-def ndwi(data: BandData) -> np.ndarray:
+def ndwi(data: BandData) -> np.ma.masked_array:
     g, nir = data[Band.G], data[Band.NIR]
-    return np.round(10_000 * (g - nir) / (g + nir))
+    return 10_000 * (g - nir) / (g + nir)  # type: ignore
 
 
-def savi(data: BandData) -> np.ndarray:
+def savi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    return np.round(10_000 * 1.5 * (nir - r) / (nir + r + 0.5))
+    return 10_000 * 1.5 * (nir - r) / (nir + r + 0.5)  # type: ignore
 
 
-def tvi(data: BandData) -> np.ndarray:
+def tvi(data: BandData) -> np.ma.masked_array:
     g, r, nir = data[Band.G], data[Band.R], data[Band.NIR]
-    # We do NOT multiply by 10_000 and round like we do for other indexes.
-    return (120 * (nir - g) - 200 * (r - g)) / 2  # pyright: ignore[reportReturnType]
+    # We do NOT multiply by 10_000 like we do for other indexes.
+    return (120 * (nir - g) - 200 * (r - g)) / 2  # type: ignore
 
 
 class Index(Enum):
@@ -302,8 +304,8 @@ class Index(Enum):
         self.longname = longname
         self.compute_index = index_function
 
-    def __call__(self, data: BandData) -> np.ndarray:
-        return self.compute_index(data).astype(np.int16)
+    def __call__(self, data: BandData) -> np.ma.masked_array:
+        return np.ma.round(self.compute_index(data)).astype(np.int16)
 
 
 def parse_args() -> Tuple[Path, Path]:
@@ -337,8 +339,7 @@ def parse_args() -> Tuple[Path, Path]:
 
 def main():
     input_dir, output_dir = parse_args()
-    granule = read_granule_bands(input_dir)
-    write_granule_indexes(output_dir, granule)
+    write_granule_indexes(output_dir, read_granule_bands(input_dir))
 
 
 if __name__ == "__main__":
