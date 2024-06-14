@@ -4,10 +4,10 @@ Generates suite of Vegetation Indices (VI) for HLS Products.
 
 ## Usage
 
-### Generating Vegetation Indexes
+### Generating Vegetation Indices
 
 ```plain
-vi_generate_indexes -i INPUT_DIR -o OUTPUT_DIR
+vi_generate_indices -i INPUT_DIR -o OUTPUT_DIR
 ```
 
 where:
@@ -27,10 +27,10 @@ vi_generate_metadata -i INPUT_DIR -o OUTPUT_DIR
 
 where:
 
-- `INPUT_DIR` is expected to be the same as for the `vi_generate_indexes`
+- `INPUT_DIR` is expected to be the same as for the `vi_generate_indices`
   command, and must contain a `.cmr.xml` file containing the granule's CMR
   metadata.
-- `OUTPUT_DIR` is expected to be the same as for the `vi_generate_indexes`
+- `OUTPUT_DIR` is expected to be the same as for the `vi_generate_indices`
   command, and this is where the new CMR XML metadata file is written, named the
   same as the input XML file, but with the prefix `HLS` replaced with `HLS-VI`.
 
