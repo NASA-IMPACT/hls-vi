@@ -13,7 +13,7 @@ setup(
     extras_require={"test": ["black[jupyter]==21.12b0", "flake8", "pytest"]},
     entry_points={
         "console_scripts": [
-            "vi_generate_indexes=hls_vi.generate_indexes:main",
+            "vi_generate_indices=hls_vi.generate_indices:main",
             "vi_generate_metadata=hls_vi.generate_metadata:main",
         ],
     },

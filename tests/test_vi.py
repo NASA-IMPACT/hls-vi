@@ -6,7 +6,7 @@ import os
 import pytest
 import rasterio
 from hls_vi.generate_metadata import generate_metadata
-from hls_vi.generate_indexes import read_granule_bands, write_granule_indexes
+from hls_vi.generate_indices import read_granule_bands, write_granule_indexes
 
 
 def tifs_equal(tif1: Path, tif2: Path):
@@ -49,12 +49,9 @@ def assert_indexes_equal(actual_dir: Path, expected_dir: Path):
     expected_tif_names = [path.name for path in expected_tif_paths]
 
     assert actual_tif_names == expected_tif_names
-    assert all(
-        tifs_equal(actual_tif_path, expected_tif_path)
-        for actual_tif_path, expected_tif_path in zip(
-            actual_tif_paths, expected_tif_paths
-        )
-    )
+
+    for actual_tif_path, expected_tif_path in zip(actual_tif_paths, expected_tif_paths):
+        assert tifs_equal(actual_tif_path, expected_tif_path)
 
 
 @pytest.mark.parametrize(
