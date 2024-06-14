@@ -6,7 +6,7 @@ import os
 import pytest
 import rasterio
 from hls_vi.generate_metadata import generate_metadata
-from hls_vi.generate_indices import read_granule_bands, write_granule_indexes
+from hls_vi.generate_indices import read_granule_bands, write_granule_indices
 
 
 def tifs_equal(tif1: Path, tif2: Path):
@@ -42,7 +42,7 @@ def remove_datetime_elements(tree: ET.ElementTree) -> ET.ElementTree:
     return tree
 
 
-def assert_indexes_equal(actual_dir: Path, expected_dir: Path):
+def assert_indices_equal(actual_dir: Path, expected_dir: Path):
     actual_tif_paths = sorted(actual_dir.glob("*.tif"))
     actual_tif_names = [path.name for path in actual_tif_paths]
     expected_tif_paths = sorted(expected_dir.glob("*.tif"))
@@ -61,9 +61,9 @@ def assert_indexes_equal(actual_dir: Path, expected_dir: Path):
         "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
     ],
 )
-def test_generate_indexes(input_dir, tmp_path: Path):
-    write_granule_indexes(tmp_path, read_granule_bands(Path(input_dir)))
-    assert_indexes_equal(tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
+def test_generate_indices(input_dir, tmp_path: Path):
+    write_granule_indices(tmp_path, read_granule_bands(Path(input_dir)))
+    assert_indices_equal(tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
 
 
 @pytest.mark.parametrize(

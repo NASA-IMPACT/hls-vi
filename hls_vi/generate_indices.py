@@ -173,7 +173,7 @@ def select_tags(tags: Tags) -> Tags:
     }
 
 
-def write_granule_indexes(output_dir: Path, granule: Granule):
+def write_granule_indices(output_dir: Path, granule: Granule):
     os.makedirs(output_dir, exist_ok=True)
     processing_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
@@ -279,7 +279,7 @@ def savi(data: BandData) -> np.ma.masked_array:
 
 def tvi(data: BandData) -> np.ma.masked_array:
     g, r, nir = data[Band.G], data[Band.R], data[Band.NIR]
-    # We do NOT multiply by 10_000 like we do for other indexes.
+    # We do NOT multiply by 10_000 like we do for other indices.
     return (120 * (nir - g) - 200 * (r - g)) / 2  # type: ignore
 
 
@@ -339,7 +339,7 @@ def parse_args() -> Tuple[Path, Path]:
 
 def main():
     input_dir, output_dir = parse_args()
-    write_granule_indexes(output_dir, read_granule_bands(input_dir))
+    write_granule_indices(output_dir, read_granule_bands(input_dir))
 
 
 if __name__ == "__main__":
