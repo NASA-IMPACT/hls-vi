@@ -7,8 +7,8 @@ import sys
 from datetime import datetime, timezone
 from enum import Enum, unique
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Tuple, Type
-from typing_extensions import SupportsFloat, TypeAlias
+from typing import Callable, Mapping, Optional, SupportsFloat, Tuple, Type
+from typing_extensions import TypeAlias
 
 import matplotlib.pyplot as plt
 import numpy as np
