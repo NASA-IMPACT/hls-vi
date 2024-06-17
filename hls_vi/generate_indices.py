@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from enum import Enum, unique
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Tuple, Type
-from typing_extensions import TypeAlias
+from typing_extensions import SupportsFloat, TypeAlias
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -330,9 +330,9 @@ class Index(Enum):
     NDVI = ("Normalized Difference Vegetation Index",)
     NDWI = ("Normalized Difference Water Index",)
     SAVI = ("Soil-Adjusted Vegetation Index",)
-    TVI = ("Triangular Vegetation Index", 1)
+    TVI = ("Triangular Vegetation Index", 1.0)
 
-    def __init__(self, long_name: str, scale_factor: float = 0.0001) -> None:
+    def __init__(self, long_name: str, scale_factor: SupportsFloat = 0.0001) -> None:
         function_name = self.name.lower()
         index_function: Optional[IndexFunction] = globals().get(function_name)
 
@@ -341,7 +341,7 @@ class Index(Enum):
 
         self.long_name = long_name
         self.compute_index = index_function
-        self.scale_factor = scale_factor
+        self.scale_factor = float(scale_factor)
 
     def __call__(self, data: BandData) -> np.ma.masked_array:
         scaled_index = self.compute_index(data) / self.scale_factor
