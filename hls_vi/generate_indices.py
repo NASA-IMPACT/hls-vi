@@ -154,8 +154,8 @@ class Granule:
     data: BandData
 
 
-def read_granule_bands(input_dir: Path) -> Granule:
-    id_ = GranuleId.from_string(os.path.basename(input_dir))
+def read_granule_bands(input_dir: Path, id_str: str) -> Granule:
+    id_ = GranuleId.from_string(id_str)
 
     with rasterio.open(input_dir / f"{id_}.Fmask.tif") as tif:
         fmask = tif.read(1, masked=False)
@@ -362,24 +362,26 @@ def parse_args() -> Tuple[Path, Path]:
         print(help_text, file=sys.stderr)
         sys.exit(2)
 
-    input_dir, output_dir = None, None
+    input_dir, output_dir, id_str = None, None, None
 
     for option, value in options:
         if option in ("-i", "--inputdir"):
             input_dir = value
         elif option in ("-o", "--outputdir"):
             output_dir = value
+        elif option in ("-id", "--idstring"):
+            id_str = value
 
     if input_dir is None or output_dir is None:
         print(help_text, file=sys.stderr)
         sys.exit(2)
 
-    return Path(input_dir), Path(output_dir)
+    return Path(input_dir), Path(output_dir), id_str
 
 
 def main():
-    input_dir, output_dir = parse_args()
-    write_granule_indices(output_dir, read_granule_bands(input_dir))
+    input_dir, output_dir, id_str = parse_args()
+    write_granule_indices(output_dir, read_granule_bands(input_dir, id_str))
 
 
 if __name__ == "__main__":

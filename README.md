@@ -7,17 +7,15 @@ Generates suite of Vegetation Indices (VI) for HLS Products.
 ### Generating Vegetation Indices
 
 ```plain
-vi_generate_indices -i INPUT_DIR -o OUTPUT_DIR
+vi_generate_indices -i INPUT_DIR -o OUTPUT_DIR -id ID_STRING
 ```
 
 where:
 
-- `INPUT_DIR` is expected to be named like
-  `HLS.{instrument}.{tile_id}.{acquisition_date}.v{version}` and contain L30 or
-  S30 band tifs.
-- `OUTPUT_DIR` is the directory to write VI tifs, and will be created if it does
-  not already exist.  The name of this directory should be named like
-  `INPUT_DIR`, but with the prefix `HLS` replaced with `HLS-VI`.
+- `INPUT_DIR` is expected to contain L30 or S30 band geotiffs.
+- `OUTPUT_DIR` is the directory to write VI geotiffs, and will be created if it does
+  not already exist.
+- `ID_STRING` is the HLS granule id basename with a pattern of `HLS.{instrument}.{tile_id}.{acquisition_date}.v{version}`  
 
 ### Generating CMR Metadata
 

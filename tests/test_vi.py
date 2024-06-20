@@ -63,14 +63,20 @@ def assert_indices_equal(actual_dir: Path, expected_dir: Path):
 
 
 @pytest.mark.parametrize(
-    argnames="input_dir",
+    argnames="input_dir,id_str",
     argvalues=[
-        "tests/fixtures/HLS.L30.T06WVS.2024120T211159.v2.0",
-        "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
-    ],
+        (
+            "tests/fixtures/HLS.L30.T06WVS.2024120T211159.v2.0",
+            "HLS.L30.T06WVS.2024120T211159.v2.0",
+        ),
+        (
+            "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
+            "HLS.S30.T13RCN.2024128T173909.v2.0",
+        ),
+    ]
 )
-def test_generate_indices(input_dir, tmp_path: Path):
-    write_granule_indices(tmp_path, read_granule_bands(Path(input_dir)))
+def test_generate_indices(input_dir, id_str, tmp_path: Path):
+    write_granule_indices(tmp_path, read_granule_bands(Path(input_dir), id_str))
     assert_indices_equal(tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
 
 
