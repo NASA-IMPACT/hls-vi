@@ -7,7 +7,7 @@ setup(
     install_requires=[
         "matplotlib",
         "numpy~=1.19.0",
-        "rasterio==1.1.3",
+        "rasterio",
         "typing-extensions",
     ],
     extras_require={"test": ["black[jupyter]==21.12b0", "flake8", "pytest"]},
