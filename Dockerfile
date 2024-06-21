@@ -6,6 +6,7 @@ RUN : \
     build-essential \
     libjpeg-dev \
     zlib1g-dev \
+    python3.6 \
     python3-dev \
     python3-pip \
     python3-venv \

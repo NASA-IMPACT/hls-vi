@@ -5,6 +5,7 @@ setup(
     version="0.1",
     packages=["hls_vi"],
     install_requires=[
+        "dataclasses",
         "matplotlib",
         "numpy~=1.19.0",
         "rasterio",
