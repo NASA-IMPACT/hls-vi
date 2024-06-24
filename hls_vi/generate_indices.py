@@ -348,11 +348,11 @@ class Index(Enum):
         return np.ma.round(scaled_index).astype(np.int16)
 
 
-def parse_args() -> Tuple[Path, Path]:
-    short_options = "i:o:"
-    long_options = ["inputdir=", "outputdir="]
+def parse_args() -> Tuple[Path, Path, str]:
+    short_options = "i:o:s:"
+    long_options = ["inputdir=", "outputdir=", "idstring="]
     command = os.path.basename(sys.argv[0])
-    help_text = f"usage: {command} -i <input_dir> -o <output_dir>"
+    help_text = f"usage: {command} -i <input_dir> -o <output_dir> -s <id_string>"
 
     argv = sys.argv[1:]
 
@@ -369,7 +369,7 @@ def parse_args() -> Tuple[Path, Path]:
             input_dir = value
         elif option in ("-o", "--outputdir"):
             output_dir = value
-        elif option in ("-id", "--idstring"):
+        elif option in ("-s", "--idstring"):
             id_str = value
 
     if input_dir is None or output_dir is None:
