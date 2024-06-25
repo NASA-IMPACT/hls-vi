@@ -372,7 +372,7 @@ def parse_args() -> Tuple[Path, Path, str]:
         elif option in ("-s", "--idstring"):
             id_str = value
 
-    if input_dir is None or output_dir is None:
+    if input_dir is None or output_dir is None or id_str is None:
         print(help_text, file=sys.stderr)
         sys.exit(2)
 
