@@ -1,4 +1,6 @@
+from datetime import datetime
 from pathlib import Path
+from typing import Mapping, Optional, Tuple
 from xml.etree import ElementTree as ET
 import contextlib
 import io
@@ -10,21 +12,40 @@ from hls_vi.generate_metadata import generate_metadata
 from hls_vi.generate_indices import read_granule_bands, write_granule_indices
 
 
-def tifs_equal(tif1: Path, tif2: Path):
-    with rasterio.open(tif1) as src1, rasterio.open(tif2) as src2:
-        return (
-            src1.count == src2.count
-            and src1.width == src2.width
-            and src1.height == src2.height
-            and src1.bounds == src2.bounds
-            and src1.crs == src2.crs
-            and src1.transform == src2.transform
-            # -------------------------------------------------------------------
-            # TODO: Uncomment the following line to compare the pixel values
-            #       once we have correct test fixture tifs to compare against.
-            # -------------------------------------------------------------------
-            # and (src1.read() == src2.read()).all()
-        )
+def assert_tifs_equal(actual: Path, expected: Path):
+    with rasterio.open(actual) as actual_src:
+        with rasterio.open(expected) as expected_src:
+            assert actual_src.count == expected_src.count
+            assert actual_src.width == expected_src.width
+            assert actual_src.height == expected_src.height
+            assert actual_src.bounds == expected_src.bounds
+            assert actual_src.crs == expected_src.crs
+            assert actual_src.transform == expected_src.transform
+            assert (actual_src.read() == expected_src.read()).all()
+
+            actual_tags, actual_time_str = remove_item(
+                actual_src.tags(), "HLS_VI_PROCESSING_TIME"
+            )
+            expected_tags, expected_time_str = remove_item(
+                expected_src.tags(), "HLS_VI_PROCESSING_TIME"
+            )
+
+            assert actual_tags == expected_tags
+            assert actual_time_str is not None
+            assert expected_time_str is not None
+
+            actual_time = datetime.strptime(actual_time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            expected_time = datetime.strptime(
+                expected_time_str, "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
+
+            assert actual_time > expected_time
+
+
+def remove_item(
+    mapping: Mapping[str, str], key: str
+) -> Tuple[Mapping[str, str], Optional[str]]:
+    return {k: v for k, v in mapping.items() if k != key}, mapping.get(key)
 
 
 def remove_element(root: ET.Element, path: str) -> None:
@@ -59,7 +80,7 @@ def assert_indices_equal(actual_dir: Path, expected_dir: Path):
     assert actual_tif_names == expected_tif_names
 
     for actual_tif_path, expected_tif_path in zip(actual_tif_paths, expected_tif_paths):
-        assert tifs_equal(actual_tif_path, expected_tif_path)
+        assert_tifs_equal(actual_tif_path, expected_tif_path)
 
 
 @pytest.mark.parametrize(
@@ -73,7 +94,7 @@ def assert_indices_equal(actual_dir: Path, expected_dir: Path):
             "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
             "HLS.S30.T13RCN.2024128T173909.v2.0",
         ),
-    ]
+    ],
 )
 def test_generate_indices(input_dir, id_str, tmp_path: Path):
     write_granule_indices(tmp_path, read_granule_bands(Path(input_dir), id_str))
