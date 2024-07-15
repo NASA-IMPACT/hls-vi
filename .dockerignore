@@ -1,5 +1,6 @@
 *
 !hls_vi/
 !tests/
+tests/fixtures/
 !setup.py
 !tox.ini

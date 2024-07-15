@@ -38,5 +38,5 @@ where:
 You can run tests using Docker:
 
 ```bash
-docker compose run --build tox
+make test
 ```
