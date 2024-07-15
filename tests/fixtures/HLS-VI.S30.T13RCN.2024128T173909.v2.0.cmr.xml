@@ -4,7 +4,7 @@
   <InsertTime>2024-05-09T20:08:04.550553Z</InsertTime>
   <LastUpdate>2024-05-09T20:08:04.550572Z</LastUpdate>
   <Collection>
-    <DataSetId>Update HLS-VI New Collection ID String</DataSetId>
+    <DataSetId>HLS Sentinel-2 Multi-spectral Instrument Vegetation Indices Daily Global 30 m V2.0</DataSetId>
   </Collection>
   <DataGranule>
     <ProducerGranuleId>HLS-VI.S30.T13RCN.2024128T173909</ProducerGranuleId>
@@ -293,7 +293,7 @@
     <AdditionalAttribute>
       <Name>IDENTIFIER_PRODUCT_DOI</Name>
       <Values>
-        <Value>10.5067/HLS/HLSS30.002</Value>
+        <Value>10.5067/HLS/HLSS30_VI.002</Value>
       </Values>
     </AdditionalAttribute>
     <AdditionalAttribute>

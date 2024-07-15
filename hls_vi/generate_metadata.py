@@ -38,8 +38,19 @@ def generate_metadata(input_dir: Path, output_dir: Path):
     tree.find("InsertTime").text = formatted_date
     tree.find("LastUpdate").text = formatted_date
 
-    # TODO: Find out what the Collection ID should be
-    tree.find("Collection/DataSetId").text = "Update HLS-VI New Collection ID String"
+    dataset_id = tree.find("Collection/DataSetId")
+    dataset_id.text = (
+        "HLS Operational Land Imager Vegetation Indices Daily Global 30 m V2.0"
+        if "L30" in metadata_path.name
+        else "HLS Sentinel-2 Multi-spectral Instrument Vegetation Indices Daily Global 30 m V2.0"  # noqa: E501
+    )
+    set_additional_attribute(
+        tree.find("AdditionalAttributes"),
+        "IDENTIFIER_PRODUCT_DOI",
+        "10.5067/HLS/HLSL30_VI.002"
+        if "L30" in metadata_path.name
+        else "10.5067/HLS/HLSS30_VI.002",
+    )
 
     data_granule = tree.find("DataGranule")
     data_granule.remove(data_granule.find("DataGranuleSizeInBytes"))
@@ -55,6 +66,24 @@ def generate_metadata(input_dir: Path, output_dir: Path):
         encoding="utf-8",
         xml_declaration=True,
     )
+
+
+def set_additional_attribute(attrs: ET.Element, name: str, value: str):
+    attr = attrs.find(f'./AdditionalAttribute[Name="{name}"]')
+
+    if attr is not None:
+        attr.find(".//Value").text = value
+    else:
+        attr = ET.Element("AdditionalAttribute")
+        attr_name = ET.Element("Name")
+        attr_name.text = name
+        attr_values = ET.Element("Values")
+        attr_value = ET.Element("Value")
+        attr_value.text = value
+        attr_values.append(attr_value)
+        attr.append(attr_name)
+        attr.append(attr_values)
+        attrs.append(attr)
 
 
 def parse_args() -> Tuple[Path, Path]:
