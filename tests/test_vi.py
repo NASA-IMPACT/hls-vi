@@ -4,15 +4,25 @@ from typing import Mapping, Optional, Tuple
 from xml.etree import ElementTree as ET
 import contextlib
 import io
-import os
 
 import pytest
 import rasterio
 from hls_vi.generate_metadata import generate_metadata
-from hls_vi.generate_indices import read_granule_bands, write_granule_indices
+from hls_vi.generate_indices import (
+    Granule,
+    Index,
+    generate_vi_granule,
+)
 
 
-def assert_tifs_equal(actual: Path, expected: Path):
+def find_index_by_long_name(long_name: str) -> Index:
+    for index in Index:
+        if index.long_name == long_name:
+            return index
+    raise ValueError(f"Index with longname '{long_name}' not found")
+
+
+def assert_tifs_equal(granule: Granule, actual: Path, expected: Path):
     with rasterio.open(actual) as actual_src:
         with rasterio.open(expected) as expected_src:
             assert actual_src.count == expected_src.count
@@ -21,7 +31,14 @@ def assert_tifs_equal(actual: Path, expected: Path):
             assert actual_src.bounds == expected_src.bounds
             assert actual_src.crs == expected_src.crs
             assert actual_src.transform == expected_src.transform
-            assert (actual_src.read() == expected_src.read()).all()
+
+            index = find_index_by_long_name(actual_src.tags()["long_name"])
+            index_data = index(granule.data).filled()
+            actual_data = actual_src.read()
+            expected_data = expected_src.read()
+
+            assert (actual_data == index_data).all()
+            assert (actual_data == expected_data).all()
 
             actual_tags, actual_time_str = remove_item(
                 actual_src.tags(), "HLS_VI_PROCESSING_TIME"
@@ -39,6 +56,10 @@ def assert_tifs_equal(actual: Path, expected: Path):
                 expected_time_str, "%Y-%m-%dT%H:%M:%S.%fZ"
             )
 
+            # The actual time should be greater than the expected time because
+            # the actual time is the time when the VI was generated (now, during
+            # test execution), which is after the time when the expected VI was
+            # generated (as a test fixture).
             assert actual_time > expected_time
 
 
@@ -71,7 +92,7 @@ def remove_datetime_elements(tree: ET.ElementTree) -> ET.ElementTree:
     return tree
 
 
-def assert_indices_equal(actual_dir: Path, expected_dir: Path):
+def assert_indices_equal(granule: Granule, actual_dir: Path, expected_dir: Path):
     actual_tif_paths = sorted(actual_dir.glob("*.tif"))
     actual_tif_names = [path.name for path in actual_tif_paths]
     expected_tif_paths = sorted(expected_dir.glob("*.tif"))
@@ -80,7 +101,7 @@ def assert_indices_equal(actual_dir: Path, expected_dir: Path):
     assert actual_tif_names == expected_tif_names
 
     for actual_tif_path, expected_tif_path in zip(actual_tif_paths, expected_tif_paths):
-        assert_tifs_equal(actual_tif_path, expected_tif_path)
+        assert_tifs_equal(granule, actual_tif_path, expected_tif_path)
 
 
 @pytest.mark.parametrize(
@@ -97,8 +118,9 @@ def assert_indices_equal(actual_dir: Path, expected_dir: Path):
     ],
 )
 def test_generate_indices(input_dir, id_str, tmp_path: Path):
-    write_granule_indices(tmp_path, read_granule_bands(Path(input_dir), id_str))
-    assert_indices_equal(tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
+    granule = generate_vi_granule(Path(input_dir), tmp_path, id_str)
+    assert_indices_equal(granule, tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
+    assert (tmp_path / f"{id_str.replace('HLS', 'HLS-VI')}.jpg").exists()
 
 
 @pytest.mark.parametrize(
@@ -117,7 +139,8 @@ def test_generate_indices(input_dir, id_str, tmp_path: Path):
 def test_generate_cmr_metadata(input_dir, output_dir):
     input_path = Path(input_dir)
     output_path = Path(output_dir)
-    output_cmr_xml_basename = f"{os.path.basename(output_dir)}.cmr.xml"
+    input_cmr_xml_path = next(input_path.glob("HLS.*.cmr.xml"))
+    output_cmr_xml_basename = input_cmr_xml_path.name.replace("HLS", "HLS-VI")
     actual_metadata_path = output_path / output_cmr_xml_basename
 
     # We keep the expected metadata file outside of the output directory,
