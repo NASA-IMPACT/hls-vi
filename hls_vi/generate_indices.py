@@ -3,6 +3,7 @@
 import getopt
 import os
 import re
+import shutil
 import sys
 from datetime import datetime, timezone
 from enum import Enum, unique
@@ -10,7 +11,6 @@ from pathlib import Path
 from typing import Callable, Mapping, Optional, SupportsFloat, Tuple, Type
 from typing_extensions import TypeAlias
 
-import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 import rasterio.crs
@@ -261,10 +261,6 @@ def write_granule_index(
             _FillValue=data.fill_value,
         )
 
-    # Create browse image using NDVI
-    if index == Index.NDVI:
-        plt.imsave(str(output_path.with_suffix(".jpeg")), data, dpi=300, cmap="gray")
-
 
 def evi(data: BandData) -> np.ma.masked_array:
     b, r, nir = data[Band.B], data[Band.R], data[Band.NIR]
@@ -345,7 +341,7 @@ class Index(Enum):
 
     def __call__(self, data: BandData) -> np.ma.masked_array:
         scaled_index = self.compute_index(data) / self.scale_factor
-        return np.ma.round(scaled_index).astype(np.int16)
+        return np.ma.round(scaled_index, decimals=4).astype(np.int16)
 
 
 def parse_args() -> Tuple[Path, Path, str]:
@@ -379,9 +375,20 @@ def parse_args() -> Tuple[Path, Path, str]:
     return Path(input_dir), Path(output_dir), id_str
 
 
+def generate_vi_granule(input_dir: Path, output_dir: Path, id_str: str) -> Granule:
+    granule = read_granule_bands(input_dir, id_str)
+    write_granule_indices(output_dir, granule)
+    shutil.copy(
+        input_dir / f"{granule.id_}.jpg",
+        output_dir / f"{str(granule.id_).replace('HLS', 'HLS-VI')}.jpg",
+    )
+
+    return granule
+
+
 def main():
     input_dir, output_dir, id_str = parse_args()
-    write_granule_indices(output_dir, read_granule_bands(input_dir, id_str))
+    generate_vi_granule(input_dir, output_dir, id_str)
 
 
 if __name__ == "__main__":
