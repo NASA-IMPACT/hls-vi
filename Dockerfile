@@ -12,8 +12,8 @@ RUN : \
     python3-venv \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --no-cache --upgrade pip setuptools \
-    && pip3 install --no-cache rasterio==1.1.3 tox tox-venv --no-binary rasterio \
+    && pip3 install --no-cache-dir --upgrade pip setuptools \
+    && pip3 install --no-cache-dir rasterio==1.1.3 tox tox-venv --no-binary rasterio \
     && :
 
 WORKDIR /hls_vi
