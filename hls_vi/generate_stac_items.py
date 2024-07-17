@@ -305,7 +305,7 @@ def main():
     parser.add_argument(
         "--cmr_xml",
         type=str,
-        default="code/data/HLS-VI.L30.T06WVS.2024120T211159.v2.0.cmr.xml",
+        default="tests/fixtures/HLS-VI.L30.T06WVS.2024120T211159.v2.0.cmr.xml",
     )
     parser.add_argument("--out_json", type=str, default="test_output.json")
     parser.add_argument(
