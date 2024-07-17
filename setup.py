@@ -6,7 +6,6 @@ setup(
     packages=["hls_vi"],
     install_requires=[
         "dataclasses",
-        "matplotlib",
         "numpy~=1.19.0",
         "rasterio",
         "typing-extensions",
@@ -16,6 +15,7 @@ setup(
         "console_scripts": [
             "vi_generate_indices=hls_vi.generate_indices:main",
             "vi_generate_metadata=hls_vi.generate_metadata:main",
+            "vi_generate_stac_items=hls_vi.generate_stac_items:main"
         ],
     },
 )

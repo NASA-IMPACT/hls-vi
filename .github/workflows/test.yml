@@ -1,0 +1,14 @@
+name: Test
+
+on: [push, workflow_dispatch]
+
+jobs:
+  tox_in_docker:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Run tests in Docker container
+        run: make test

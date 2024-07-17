@@ -4,7 +4,7 @@
   <InsertTime>2024-05-08T21:25:20.907010Z</InsertTime>
   <LastUpdate>2024-05-08T21:25:20.907443Z</LastUpdate>
   <Collection>
-    <DataSetId>Update HLS-VI New Collection ID String</DataSetId>
+    <DataSetId>HLS Operational Land Imager Vegetation Indices Daily Global 30 m V2.0</DataSetId>
   </Collection>
   <DataGranule>
     <ProducerGranuleId>HLS-VI.L30.T06WVS.2024120T211159</ProducerGranuleId>
@@ -231,7 +231,7 @@
     <AdditionalAttribute>
       <Name>IDENTIFIER_PRODUCT_DOI</Name>
       <Values>
-        <Value>10.5067/HLS/HLSL30.002</Value>
+        <Value>10.5067/HLS/HLSL30_VI.002</Value>
       </Values>
     </AdditionalAttribute>
     <AdditionalAttribute>

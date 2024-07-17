@@ -310,13 +310,5 @@
   </OnlineResources>
   <DataFormat>Cloud Optimized GeoTIFF (COG)</DataFormat>
   <AssociatedBrowseImageUrls>
-    <ProviderBrowseUrl>
-      <URL>https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/HLSS30.020/HLS.S30.T13RCN.2024128T173909.v2.0/HLS.S30.T13RCN.2024128T173909.v2.0.jpg</URL>
-      <Description>Download HLS.S30.T13RCN.2024128T173909.v2.0.jpg</Description>
-    </ProviderBrowseUrl>
-    <ProviderBrowseUrl>
-      <URL>s3://lp-prod-public/HLSS30.020/HLS.S30.T13RCN.2024128T173909.v2.0/HLS.S30.T13RCN.2024128T173909.v2.0.jpg</URL>
-      <Description>This link provides direct download access via S3 to the granule</Description>
-    </ProviderBrowseUrl>
   </AssociatedBrowseImageUrls>
 </Granule>

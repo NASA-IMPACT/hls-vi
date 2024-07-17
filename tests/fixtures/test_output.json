@@ -15,7 +15,7 @@
     "proj:epsg": 32606,
     "view:sun_azimuth": 168.41547441,
     "view:azimuth": 179.72857034,
-    "sci:doi": "10.5067/HLS/HLSL30.002",
+    "sci:doi": "10.5067/HLS/HLSL30_VI.002",
     "datetime": "2024-05-08T16:25:12.736230Z"
   },
   "geometry": {
@@ -38,7 +38,7 @@
       "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/HLSL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0_stac.json",
       "type": "application/json"
     },
-    { "rel": "cite-as", "href": "https://doi.org/10.5067/HLS/HLSL30.002" }
+    { "rel": "cite-as", "href": "https://doi.org/10.5067/HLS/HLSL30_VI.002" }
   ],
   "assets": {
     "NDVI": {
