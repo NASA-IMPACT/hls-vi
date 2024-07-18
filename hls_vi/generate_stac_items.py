@@ -192,7 +192,8 @@ def add_assets(item, granule, endpoint, version):
 
 
 def process_projection(item, granule, band1_file):
-    """Function fetches the projection information from the HLS_VI band file and compares if the projection is same for the granule as well as the HLS_VI band image.
+    """Function fetches the projection information from the HLS_VI band file and
+    compares if the projection is same for the granule as well as the HLS_VI band image.
 
     Args:
         item (PyStac item): STAC item created from the HLS_VI granule
@@ -213,7 +214,8 @@ def process_projection(item, granule, band1_file):
 
 
 def process_view_geometry(item, granule):
-    """Function checks the geometry within the attributes of the STAC item and the HLS_VI granule
+    """Function checks the geometry within the attributes of the STAC item and
+    the HLS_VI granule
 
     Args:
         item (PyStac item): STAC item created from the HLS_VI granule
@@ -251,8 +253,10 @@ def cmr_to_item(hls_vi_metadata, endpoint, version):
     Returns:
         dict: PyStac item in a dictionary form
     """
-    # provide one of the HLS_VI granules to fetch the projection and other information to generate the STAC item
-    band1_file = "code/new_test/HLS_VI.L30.T06WVS.2024120T211159.v2.0.NDVI.tif"  # Since this was run in a local machine a local file was provided.
+    # provide one of the HLS_VI granules to fetch the projection and other information
+    # to generate the STAC item. Since this was run in a local machine a local file was
+    # provided.
+    band1_file = "code/new_test/HLS_VI.L30.T06WVS.2024120T211159.v2.0.NDVI.tif"
     cmr = untangle.parse(hls_vi_metadata)
     granule = cmr.Granule
     item_id = granule.GranuleUR.cdata

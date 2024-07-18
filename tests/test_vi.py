@@ -170,21 +170,26 @@ def test_generate_cmr_metadata(input_dir, output_dir):
         with contextlib.suppress(FileNotFoundError):
             actual_metadata_path.unlink()
 
+
 @pytest.fixture
 def cmr_xml():
     return "tests/fixtures/HLS-VI.L30.T06WVS.2024120T211159.v2.0.cmr.xml"
+
 
 @pytest.fixture
 def json_output():
     return "tests/fixtures/unit_test_output.json"
 
+
 @pytest.fixture
 def endpoint():
     return "data.lpdaac.earthdatacloud.nasa.gov"
 
+
 @pytest.fixture
 def version():
     return "020"
+
 
 def test_generate_stac_items(cmr_xml, json_output, endpoint, version):
     create_item(
@@ -193,7 +198,7 @@ def test_generate_stac_items(cmr_xml, json_output, endpoint, version):
         endpoint,
         version,
     )
-    with open('tests/fixtures/test_output.json') as f:
+    with open("tests/fixtures/test_output.json") as f:
         stac_item = json.load(f)
     with open(json_output) as f:
         unit_test_stac_item = json.load(f)
