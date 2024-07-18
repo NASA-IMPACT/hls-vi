@@ -8,9 +8,7 @@
     "platform": "landsat-8",
     "instruments": ["oli"],
     "eo:cloud_cover": 6.0,
-    "proj:transform": [
-      30.0, 0.0, 399960.0, 0.0, -30.0, 7200000.0, 0.0, 0.0, 1.0
-    ],
+    "proj:transform": [30.0, 0.0, 399960.0, 0.0, -30.0, 7200000.0, 0.0, 0.0, 1.0],
     "proj:shape": [3660, 3660],
     "proj:epsg": 32606,
     "view:sun_azimuth": 168.41547441,
@@ -103,8 +101,8 @@
   },
   "bbox": [-149.114568, 63.924491, -146.793616, 64.923996],
   "stac_extensions": [
-    "https://stac-extensions.github.io/eo/v1.1.0/schema.json",
-    "https://stac-extensions.github.io/projection/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
     "https://stac-extensions.github.io/view/v1.0.0/schema.json",
     "https://stac-extensions.github.io/scientific/v1.0.0/schema.json"
   ]

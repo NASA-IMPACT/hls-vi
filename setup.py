@@ -10,7 +10,7 @@ setup(
         "rasterio",
         "typing-extensions",
         "geojson",
-        "pystac",
+        "pystac[validation]==1.0.0rc2",
         "untangle",
         "shapely",
     ],
