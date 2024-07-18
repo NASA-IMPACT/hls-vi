@@ -12,7 +12,7 @@ from hls_vi.generate_metadata import generate_metadata
 from hls_vi.generate_indices import (
     Granule,
     Index,
-    # generate_vi_granule,
+    generate_vi_granule,
 )
 from hls_vi.generate_stac_items import create_item
 
@@ -106,23 +106,23 @@ def assert_indices_equal(granule: Granule, actual_dir: Path, expected_dir: Path)
         assert_tifs_equal(granule, actual_tif_path, expected_tif_path)
 
 
-# @pytest.mark.parametrize(
-#     argnames="input_dir,id_str",
-#     argvalues=[
-#         (
-#             "tests/fixtures/HLS.L30.T06WVS.2024120T211159.v2.0",
-#             "HLS.L30.T06WVS.2024120T211159.v2.0",
-#         ),
-#         (
-#             "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
-#             "HLS.S30.T13RCN.2024128T173909.v2.0",
-#         ),
-#     ],
-# )
-# def test_generate_indices(input_dir, id_str, tmp_path: Path):
-#     granule = generate_vi_granule(Path(input_dir), tmp_path, id_str)
-#     assert_indices_equal(granule, tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
-#     assert (tmp_path / f"{id_str.replace('HLS', 'HLS-VI')}.jpg").exists()
+@pytest.mark.parametrize(
+    argnames="input_dir,id_str",
+    argvalues=[
+        (
+            "tests/fixtures/HLS.L30.T06WVS.2024120T211159.v2.0",
+            "HLS.L30.T06WVS.2024120T211159.v2.0",
+        ),
+        (
+            "tests/fixtures/HLS.S30.T13RCN.2024128T173909.v2.0",
+            "HLS.S30.T13RCN.2024128T173909.v2.0",
+        ),
+    ],
+)
+def test_generate_indices(input_dir, id_str, tmp_path: Path):
+    granule = generate_vi_granule(Path(input_dir), tmp_path, id_str)
+    assert_indices_equal(granule, tmp_path, Path(input_dir.replace("HLS", "HLS-VI")))
+    assert (tmp_path / f"{id_str.replace('HLS', 'HLS-VI')}.jpg").exists()
 
 
 @pytest.mark.parametrize(
