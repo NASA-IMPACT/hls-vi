@@ -207,10 +207,8 @@ def process_projection(item, granule, band1_file):
         proj_ext.shape = [height, width]
     for attribute in granule.AdditionalAttributes.AdditionalAttribute:
         if attribute.Name == "MGRS_TILE_ID":
-            value = attribute.Values.Value.cdata
-            hemi = "326"
-            epsg = int(hemi + value[0:2])
-            proj_ext.epsg = epsg
+            mgrs_tile_id = attribute.Values.Value.cdata
+            proj_ext.epsg = int(f"326{mgrs_tile_id[:2]}")
 
 
 def process_view_geometry(item, granule):
