@@ -131,6 +131,8 @@ def process_common_metadata(item, granule):
     instrument = (
         granule.Platforms.Platform.Instruments.Instrument.ShortName.cdata.lower()
     )
+    # a simple check to exclude Sentinel-2 from the ShortName string for S30 granules
+    # and OLI from the short string for L30 granules.
     if " " in instrument:
         item_instrument = instrument.split()[1]
     else:
@@ -164,13 +166,13 @@ def add_assets(item, granule, endpoint, version):
     product = item_id.split(".")[1]
     if product == "S30":
         band_info = hls_vi_band_info
-        url = f"https://{endpoint}/lp-prod-protected/HLSS30.{version}/{item_id}/"
-        public_url = f"https://{endpoint}/lp-prod-public/HLSS30.{version}/{item_id}/"
+        url = f"https://{endpoint}/lp-prod-protected/HLS-VIS30.{version}/{item_id}/"
+        public_url = f"https://{endpoint}/lp-prod-public/HLS-VIS30.{version}/{item_id}/"
 
     if product == "L30":
         band_info = hls_vi_band_info
-        url = f"https://{endpoint}/lp-prod-protected/HLSL30.{version}/{item_id}/"
-        public_url = f"https://{endpoint}/lp-prod-public/HLSL30.{version}/{item_id}/"
+        url = f"https://{endpoint}/lp-prod-protected/HLS-VIL30.{version}/{item_id}/"
+        public_url = f"https://{endpoint}/lp-prod-public/HLS-VIL30.{version}/{item_id}/"
 
     for band_id, band_info in band_info.items():
         band_url = f"{url}{item_id}.{band_id}.tif"
