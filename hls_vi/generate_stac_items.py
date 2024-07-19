@@ -172,10 +172,8 @@ def add_assets(item, granule, endpoint, version):
         url = f"https://{endpoint}/lp-prod-protected/HLSL30.{version}/{item_id}/"
         public_url = f"https://{endpoint}/lp-prod-public/HLSL30.{version}/{item_id}/"
 
-    url_template = url + "{}.{}.tif"
-
     for band_id, band_info in band_info.items():
-        band_url = url_template.format(item_id, band_id)
+        band_url = f"{url}{item_id}.{band_id}.tif"
         asset = pystac.Asset(
             href=band_url, media_type=pystac.MediaType.COG, roles=["data"]
         )
