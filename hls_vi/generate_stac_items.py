@@ -1,4 +1,5 @@
 import datetime
+import os
 import json
 import argparse
 import pystac
@@ -188,19 +189,19 @@ def add_assets(item, granule, endpoint, version):
     item.set_self_href(f"{public_url}{item_id}_stac.json")
 
 
-def process_projection(item, granule, band1_file):
+def process_projection(item, granule, index_file):
     """Function fetches the projection information from the HLS_VI band file and
     compares if the projection is same for the granule as well as the HLS_VI band image.
 
     Args:
         item (PyStac item): STAC item created from the HLS_VI granule
         granule (untangle.Element): HLS_VI Granule information from the xml file
-        band1_file (_type_): _description_
+        index_file (_type_): _description_
     """
     proj_ext = ProjectionExtension.ext(item, add_if_missing=True)
-    with rasterio.open(band1_file) as band1_dataset:
-        proj_ext.transform = band1_dataset.transform
-        proj_ext.shape = band1_dataset.shape
+    with rasterio.open(index_file) as index_dataset:
+        proj_ext.transform = index_dataset.transform
+        proj_ext.shape = index_dataset.shape
     for attribute in granule.AdditionalAttributes.AdditionalAttribute:
         if attribute.Name == "MGRS_TILE_ID":
             mgrs_tile_id = attribute.Values.Value.cdata
@@ -250,7 +251,7 @@ def cmr_to_item(hls_vi_metadata, endpoint, version):
     # provide one of the HLS_VI granules to fetch the projection and other information
     # to generate the STAC item. Since this was run in a local machine a local file was
     # provided.
-    band1_file = os.path.join(
+    index_file = os.path.join(
         os.path.dirname(hls_vi_metadata),
         os.path.basename(hls_vi_metadata).replace("cmr.xml", "NDVI.tif"),
     )
@@ -274,7 +275,7 @@ def cmr_to_item(hls_vi_metadata, endpoint, version):
     process_common_metadata(item, granule)
     process_eo(item, granule)
     add_assets(item, granule, endpoint, version)
-    process_projection(item, granule, band1_file)
+    process_projection(item, granule, index_file)
     process_view_geometry(item, granule)
     process_scientific(item, granule)
     return item.to_dict()
@@ -300,13 +301,11 @@ def main():
     parser.add_argument(
         "--cmr_xml",
         type=str,
-        default="tests/fixtures/HLS-VI.L30.T06WVS.2024120T211159.v2.0.cmr.xml",
     )
-    parser.add_argument("--out_json", type=str, default="test_output.json")
+    parser.add_argument("--out_json", type=str)
     parser.add_argument(
-        "--endpoint", type=str, default="data.lpdaac.earthdatacloud.nasa.gov"
-    )
-    parser.add_argument("--version", type=str, default="020")
+        "--endpoint", type=str)
+    parser.add_argument("--version", type=str)
     args = parser.parse_args()
 
     create_item(
