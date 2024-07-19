@@ -283,9 +283,7 @@ def cmr_to_item(hls_vi_metadata, endpoint, version):
     process_projection(item, granule, band1_file)
     process_view_geometry(item, granule)
     process_scientific(item, granule)
-    # item.validate()
-    feature = item.to_dict()
-    return feature
+    return item.to_dict()
 
 
 def create_item(hls_vi_metadata, out_json, endpoint, version):
