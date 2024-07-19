@@ -131,8 +131,8 @@ def process_common_metadata(item, granule):
     instrument = (
         granule.Platforms.Platform.Instruments.Instrument.ShortName.cdata.lower()
     )
-    # For L30, the instrument is "OLI", but for S30, it is "Sentinel-2 MSI", we simply split
-    # on spaces and grab the last element, so we get either "OLI" or "MSI".
+    # For L30, the instrument is "OLI", but for S30, it is "Sentinel-2 MSI", we simply
+    # split on spaces and grab the last element, so we get either "OLI" or "MSI".
     if " " in instrument:
         item_instrument = instrument.split()[1]
     else:
@@ -305,8 +305,7 @@ def main():
         type=str,
     )
     parser.add_argument("--out_json", type=str)
-    parser.add_argument(
-        "--endpoint", type=str)
+    parser.add_argument("--endpoint", type=str)
     parser.add_argument("--version", type=str)
     args = parser.parse_args()
 
