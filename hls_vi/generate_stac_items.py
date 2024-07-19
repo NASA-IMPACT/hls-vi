@@ -200,8 +200,7 @@ def process_projection(item, granule, band1_file):
     proj_ext = ProjectionExtension.ext(item, add_if_missing=True)
     with rasterio.open(band1_file) as band1_dataset:
         proj_ext.transform = band1_dataset.transform
-        height, width = band1_dataset.shape
-        proj_ext.shape = [height, width]
+        proj_ext.shape = band1_dataset.shape
     for attribute in granule.AdditionalAttributes.AdditionalAttribute:
         if attribute.Name == "MGRS_TILE_ID":
             mgrs_tile_id = attribute.Values.Value.cdata
