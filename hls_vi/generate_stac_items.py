@@ -256,9 +256,9 @@ def cmr_to_item(hls_vi_metadata, endpoint, version):
     # provide one of the HLS_VI granules to fetch the projection and other information
     # to generate the STAC item. Since this was run in a local machine a local file was
     # provided.
-    band1_file = (
-        "tests/fixtures/HLS-VI.L30.T06WVS.2024120T211159.v2.0/"
-        "HLS-VI.L30.T06WVS.2024120T211159.v2.0.NDVI.tif"
+    band1_file = os.path.join(
+        os.path.dirname(hls_vi_metadata),
+        os.path.basename(hls_vi_metadata).replace("cmr.xml", "NDVI.tif"),
     )
     cmr = untangle.parse(hls_vi_metadata)
     granule = cmr.Granule
