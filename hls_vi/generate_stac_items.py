@@ -105,8 +105,7 @@ def get_geometry(granule):
         ring.append(closing_point)
         ringtuple = (ring,)
         multipolygon.append(ringtuple)
-    geometry = MultiPolygon(multipolygon)
-    return geometry
+    return MultiPolygon(multipolygon)
 
 
 def process_common_metadata(item, granule):
