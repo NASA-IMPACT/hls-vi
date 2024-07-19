@@ -131,8 +131,8 @@ def process_common_metadata(item, granule):
     instrument = (
         granule.Platforms.Platform.Instruments.Instrument.ShortName.cdata.lower()
     )
-    # a simple check to exclude Sentinel-2 from the ShortName string for S30 granules
-    # and OLI from the short string for L30 granules.
+    # For L30, the instrument is "OLI", but for S30, it is "Sentinel-2 MSI", we simply split
+    # on spaces and grab the last element, so we get either "OLI" or "MSI".
     if " " in instrument:
         item_instrument = instrument.split()[1]
     else:
