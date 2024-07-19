@@ -298,10 +298,6 @@ def create_item(hls_vi_metadata, out_json, endpoint, version):
         version (str):
     """
 
-    hls_vi_metadata = hls_vi_metadata
-    out_json = out_json
-    endpoint = endpoint
-    version = version
     item = cmr_to_item(hls_vi_metadata, endpoint, version)
     with open(out_json, "w") as outfile:
         json.dump(item, outfile)
