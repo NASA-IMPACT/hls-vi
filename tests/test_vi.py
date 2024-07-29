@@ -4,6 +4,7 @@ from typing import Mapping, Optional, Tuple
 from xml.etree import ElementTree as ET
 import contextlib
 import io
+import json
 
 import pytest
 import rasterio
@@ -13,6 +14,7 @@ from hls_vi.generate_indices import (
     Index,
     generate_vi_granule,
 )
+from hls_vi.generate_stac_items import create_item
 
 
 def find_index_by_long_name(long_name: str) -> Index:
@@ -167,3 +169,34 @@ def test_generate_cmr_metadata(input_dir, output_dir):
     finally:
         with contextlib.suppress(FileNotFoundError):
             actual_metadata_path.unlink()
+
+
+def test_generate_stac_items(tmp_path):
+    import shutil
+
+    # Since we our HLS-VI CMR XML fixture files are not in the same directory as the
+    # corresponding NDVI TIF files, we need to copy the NDVI TIF files to the temporary
+    # directory, along with the CMR XML file, so that they are both in the same
+    # directory.  This is because our logic for creating STAC items assumes that the
+    # CMR XML file and the NDVI TIF file are in the same directory.
+
+    cmr_xml = "HLS-VI.L30.T06WVS.2024120T211159.v2.0.cmr.xml"
+    ndvi_tif = cmr_xml.replace("cmr.xml", "NDVI.tif")
+    fixtures = Path("tests") / "fixtures"
+    shutil.copy(fixtures / cmr_xml, tmp_path / cmr_xml)
+    shutil.copy(fixtures / ndvi_tif.rstrip(".NDVI.tif") / ndvi_tif, tmp_path / ndvi_tif)
+
+    temp_json_output = tmp_path / "temp_output.json"
+
+    create_item(
+        str(tmp_path / cmr_xml),
+        temp_json_output,
+        "data.lpdaac.earthdatacloud.nasa.gov",
+        "020",
+    )
+
+    with open("tests/fixtures/HLS-VI_stac_item.json") as f:
+        expected_stac_item = json.load(f)
+    with open(temp_json_output) as f:
+        actual_stac_item = json.load(f)
+    assert actual_stac_item == expected_stac_item
