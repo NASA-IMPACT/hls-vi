@@ -33,68 +33,68 @@
   "links": [
     {
       "rel": "self",
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0_stac.json",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0_stac.json",
       "type": "application/json"
     },
     { "rel": "cite-as", "href": "https://doi.org/10.5067/HLS/HLSL30_VI.002" }
   ],
   "assets": {
     "NDVI": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NDVI.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NDVI.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "NDVI", "common_name": "NDVI" }],
       "roles": ["data"]
     },
     "EVI": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.EVI.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.EVI.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "EVI", "common_name": "EVI" }],
       "roles": ["data"]
     },
     "MSAVI": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.MSAVI.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.MSAVI.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "MSAVI", "common_name": "MSAVI" }],
       "roles": ["data"]
     },
     "NBR": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NBR.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NBR.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "NBR", "common_name": "NBR" }],
       "roles": ["data"]
     },
     "NBR2": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NBR2.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NBR2.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "NBR2", "common_name": "NBR2" }],
       "roles": ["data"]
     },
     "NDMI": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NDMI.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NDMI.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "NDMI", "common_name": "NDMI" }],
       "roles": ["data"]
     },
     "NDWI": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NDWI.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.NDWI.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "NDWI", "common_name": "NDWI" }],
       "roles": ["data"]
     },
     "SAVI": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.SAVI.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.SAVI.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "SAVI", "common_name": "SAVI" }],
       "roles": ["data"]
     },
     "TVI": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.TVI.tif",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.TVI.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [{ "name": "TVI", "common_name": "TVI" }],
       "roles": ["data"]
     },
     "thumbnail": {
-      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/HLS-VIL30.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.jpg",
+      "href": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/HLSL30_VI.020/HLS-VI.L30.T06WVS.2024120T211159.v2.0/HLS-VI.L30.T06WVS.2024120T211159.v2.0.jpg",
       "type": "image/jpeg",
       "roles": ["thumbnail"]
     }
