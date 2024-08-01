@@ -5,6 +5,7 @@ from xml.etree import ElementTree as ET
 import contextlib
 import io
 import json
+import re
 
 import pytest
 import rasterio
@@ -15,6 +16,8 @@ from hls_vi.generate_indices import (
     generate_vi_granule,
 )
 from hls_vi.generate_stac_items import create_item
+
+ISO_8601_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 def find_index_by_long_name(long_name: str) -> Index:
@@ -53,9 +56,9 @@ def assert_tifs_equal(granule: Granule, actual: Path, expected: Path):
             assert actual_time_str is not None
             assert expected_time_str is not None
 
-            actual_time = datetime.strptime(actual_time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            actual_time = datetime.strptime(actual_time_str, ISO_8601_DATETIME_FORMAT)
             expected_time = datetime.strptime(
-                expected_time_str, "%Y-%m-%dT%H:%M:%S.%fZ"
+                expected_time_str, ISO_8601_DATETIME_FORMAT
             )
 
             # The actual time should be greater than the expected time because
@@ -71,7 +74,7 @@ def remove_item(
     return {k: v for k, v in mapping.items() if k != key}, mapping.get(key)
 
 
-def remove_element(root: ET.Element, path: str) -> None:
+def remove_element(root: ET.Element, path: str) -> ET.Element:
     parent_path = "/".join(path.split("/")[:-1])
     parent = root.find(parent_path)
     child = root.find(path)
@@ -81,17 +84,27 @@ def remove_element(root: ET.Element, path: str) -> None:
 
     parent.remove(child)
 
+    return child
 
-def remove_datetime_elements(tree: ET.ElementTree) -> ET.ElementTree:
+
+def remove_datetime_elements(
+    tree: ET.ElementTree,
+) -> Tuple[ET.ElementTree, Tuple[ET.Element, ...]]:
     root = tree.getroot()
 
-    remove_element(root, "./InsertTime")
-    remove_element(root, "./LastUpdate")
-    remove_element(root, "./DataGranule/ProductionDateTime")
-    remove_element(root, "./Temporal/RangeDateTime/BeginningDateTime")
-    remove_element(root, "./Temporal/RangeDateTime/EndingDateTime")
-
-    return tree
+    return (
+        tree,
+        tuple(
+            remove_element(root, path)
+            for path in (
+                "./InsertTime",
+                "./LastUpdate",
+                "./DataGranule/ProductionDateTime",
+                "./Temporal/RangeDateTime/BeginningDateTime",
+                "./Temporal/RangeDateTime/EndingDateTime",
+            )
+        ),
+    )
 
 
 def assert_indices_equal(granule: Granule, actual_dir: Path, expected_dir: Path):
@@ -104,6 +117,16 @@ def assert_indices_equal(granule: Granule, actual_dir: Path, expected_dir: Path)
 
     for actual_tif_path, expected_tif_path in zip(actual_tif_paths, expected_tif_paths):
         assert_tifs_equal(granule, actual_tif_path, expected_tif_path)
+
+
+def is_valid_datetime(e: ET.Element) -> bool:
+    # The CMR accepts ISO 8601 datetime values, optionally with fractional seconds
+    # with 1 to 9 decimal digits.  We are using a regex match because Python's
+    # strptime function supports only exactly 6 decimal digits, but some of the tif
+    # tag values include more than 6 decimal places.
+    return bool(
+        re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([.]\d{1,9})?Z", str(e.text))
+    )
 
 
 @pytest.mark.parametrize(
@@ -152,8 +175,11 @@ def test_generate_cmr_metadata(input_dir, output_dir):
     try:
         generate_metadata(input_dir=input_path, output_dir=output_path)
 
-        actual_metadata_tree = remove_datetime_elements(ET.parse(actual_metadata_path))
-        expected_metadata_tree = remove_datetime_elements(
+        actual_metadata_tree, dt_elements = remove_datetime_elements(
+            ET.parse(actual_metadata_path)
+        )
+        assert all(map(is_valid_datetime, dt_elements))
+        expected_metadata_tree, _ = remove_datetime_elements(
             ET.parse(expected_metadata_path)
         )
 

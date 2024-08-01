@@ -26,7 +26,7 @@ def generate_metadata(input_dir: Path, output_dir: Path):
     tree = ET.parse(metadata_path)
 
     with rasterio.open(next(output_dir.glob("*.tif"))) as vi_tif:
-        sensing_times = vi_tif.tags()["SENSING_TIME"].split(";")
+        sensing_times = [t.strip() for t in vi_tif.tags()["SENSING_TIME"].split(";")]
         sensing_time_begin, sensing_time_end = sensing_times[0], sensing_times[-1]
         processing_time = vi_tif.tags()["HLS_VI_PROCESSING_TIME"]
 
