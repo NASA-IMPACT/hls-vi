@@ -6,15 +6,26 @@ setup(
     packages=["hls_vi"],
     install_requires=[
         "dataclasses",
-        "numpy~=1.19.0",
-        "rasterio",
-        "typing-extensions",
         "geojson",
+        "importlib_resources",
+        "lxml",
+        "numpy~=1.19.0",
         "pystac[validation]==1.0.0rc2",
-        "untangle",
+        "rasterio",
         "shapely",
+        "typing-extensions",
+        "untangle",
     ],
-    extras_require={"test": ["black[jupyter]==21.12b0", "flake8", "pytest"]},
+    extras_require={
+        "test": [
+            "black[jupyter]==21.12b0",
+            "flake8",
+            "mypy",
+            "pytest",
+            "types-dataclasses",
+            "types-untangle",
+        ]
+    },
     entry_points={
         "console_scripts": [
             "vi_generate_indices=hls_vi.generate_indices:main",
