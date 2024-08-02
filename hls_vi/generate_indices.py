@@ -1,4 +1,6 @@
-# pyright: reportAttributeAccessIssue=false, reportOperatorIssue=false
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportOperatorIssue=false
+# pyright: reportOptionalOperand=false
 
 import getopt
 import os
@@ -8,7 +10,7 @@ import sys
 from datetime import datetime, timezone
 from enum import Enum, unique
 from pathlib import Path
-from typing import Callable, Mapping, Optional, SupportsFloat, Tuple, Type
+from typing import Callable, List, Mapping, Optional, SupportsFloat, Tuple, Type
 from typing_extensions import TypeAlias
 
 import numpy as np
@@ -91,7 +93,7 @@ class Instrument(Enum):
     def __init__(
         self, band_type: Type[InstrumentBand], parse_satellite: Callable[[Tags], str]
     ) -> None:
-        self.bands = list(band_type)
+        self.bands: List[InstrumentBand] = list(band_type)
         self.parse_satellite = parse_satellite
 
     @classmethod
@@ -207,7 +209,7 @@ def select_tags(granule_id: GranuleId, tags: Tags) -> Tags:
     }
 
 
-def write_granule_indices(output_dir: Path, granule: Granule):
+def write_granule_indices(output_dir: Path, granule: Granule) -> None:
     os.makedirs(output_dir, exist_ok=True)
     processing_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
@@ -232,7 +234,7 @@ def write_granule_index(
     granule: Granule,
     index: "Index",
     processing_time: str,
-):
+) -> None:
     """Save raster data to a GeoTIFF file using rasterio."""
 
     data = index(granule.data)
@@ -264,16 +266,16 @@ def write_granule_index(
 
 def evi(data: BandData) -> np.ma.masked_array:
     b, r, nir = data[Band.B], data[Band.R], data[Band.NIR]
-    return 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1)  # type: ignore
+    return 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1)
 
 
 def msavi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    sqrt_term = (2 * nir + 1) ** 2 - 8 * (nir - r)  # type: ignore
+    sqrt_term = (2 * nir + 1) ** 2 - 8 * (nir - r)
 
     result: np.ma.masked_array = np.ma.where(
         sqrt_term >= 0,
-        (2 * nir + 1 - np.sqrt(sqrt_term)) / 2,  # type: ignore
+        (2 * nir + 1 - np.sqrt(sqrt_term)) / 2,
         np.nan,
     )
     result.fill_value = r.fill_value
@@ -283,38 +285,38 @@ def msavi(data: BandData) -> np.ma.masked_array:
 
 def nbr(data: BandData) -> np.ma.masked_array:
     nir, swir2 = data[Band.NIR], data[Band.SWIR2]
-    return (nir - swir2) / (nir + swir2)  # type: ignore
+    return (nir - swir2) / (nir + swir2)
 
 
 def nbr2(data: BandData) -> np.ma.masked_array:
     swir1, swir2 = data[Band.SWIR1], data[Band.SWIR2]
-    return (swir1 - swir2) / (swir1 + swir2)  # type: ignore
+    return (swir1 - swir2) / (swir1 + swir2)
 
 
 def ndmi(data: BandData) -> np.ma.masked_array:
     nir, swir1 = data[Band.NIR], data[Band.SWIR1]
-    return (nir - swir1) / (nir + swir1)  # type: ignore
+    return (nir - swir1) / (nir + swir1)
 
 
 def ndvi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    return (nir - r) / (nir + r)  # type: ignore
+    return (nir - r) / (nir + r)
 
 
 def ndwi(data: BandData) -> np.ma.masked_array:
     g, nir = data[Band.G], data[Band.NIR]
-    return (g - nir) / (g + nir)  # type: ignore
+    return (g - nir) / (g + nir)
 
 
 def savi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    return 1.5 * (nir - r) / (nir + r + 0.5)  # type: ignore
+    return 1.5 * (nir - r) / (nir + r + 0.5)
 
 
 def tvi(data: BandData) -> np.ma.masked_array:
     g, r, nir = data[Band.G], data[Band.R], data[Band.NIR]
     # We do NOT multiply by 10_000 like we do for other indices.
-    return (120 * (nir - g) - 200 * (r - g)) / 2  # type: ignore
+    return (120 * (nir - g) - 200 * (r - g)) / 2  # pyright: ignore[reportReturnType]
 
 
 class Index(Enum):
@@ -386,7 +388,7 @@ def generate_vi_granule(input_dir: Path, output_dir: Path, id_str: str) -> Granu
     return granule
 
 
-def main():
+def main() -> None:
     input_dir, output_dir, id_str = parse_args()
     generate_vi_granule(input_dir, output_dir, id_str)
 

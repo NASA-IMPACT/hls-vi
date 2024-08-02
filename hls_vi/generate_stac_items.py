@@ -2,6 +2,7 @@ import datetime
 import os
 import json
 import argparse
+from typing import Any, Mapping
 import pystac
 import rasterio
 import untangle
@@ -80,7 +81,7 @@ hls_vi_band_info = {
 }
 
 
-def get_geometry(granule):
+def get_geometry(granule: untangle.Element) -> MultiPolygon:
     """Function returns the geometry of the HLS_VI granule
 
     Args:
@@ -109,7 +110,7 @@ def get_geometry(granule):
     return MultiPolygon(multipolygon)
 
 
-def process_common_metadata(item, granule):
+def process_common_metadata(item: pystac.Item, granule: untangle.Element) -> None:
     """Function fetches and processes the general information from the granule metadata.
      and updates the information in the STAC item.
 
@@ -133,14 +134,11 @@ def process_common_metadata(item, granule):
     )
     # For L30, the instrument is "OLI", but for S30, it is "Sentinel-2 MSI", we simply
     # split on spaces and grab the last element, so we get either "OLI" or "MSI".
-    if " " in instrument:
-        item_instrument = instrument.split()[1]
-    else:
-        item_instrument = instrument
+    item_instrument = instrument.split()[1] if " " in instrument else instrument
     item.common_metadata.instruments = [item_instrument]
 
 
-def process_eo(item, granule):
+def process_eo(item: pystac.Item, granule: untangle.Element) -> None:
     """Function processes the Earth observation information from the STAC item.
 
     Args:
@@ -153,7 +151,9 @@ def process_eo(item, granule):
             eo_extension.cloud_cover = float(attribute.Values.Value.cdata)
 
 
-def add_assets(item, granule, endpoint, version):
+def add_assets(
+    item: pystac.Item, granule: untangle.Element, endpoint: str, version: str
+) -> None:
     """Function adds all the assets to the STAC item
 
     Args:
@@ -191,7 +191,9 @@ def add_assets(item, granule, endpoint, version):
     item.set_self_href(f"{public_url}{item_id}_stac.json")
 
 
-def process_projection(item, granule, index_file):
+def process_projection(
+    item: pystac.Item, granule: untangle.Element, index_file: str
+) -> None:
     """Function fetches the projection information from the HLS_VI band file and
     compares if the projection is same for the granule as well as the HLS_VI band image.
 
@@ -210,7 +212,7 @@ def process_projection(item, granule, index_file):
             proj_ext.epsg = int(f"326{mgrs_tile_id[:2]}")
 
 
-def process_view_geometry(item, granule):
+def process_view_geometry(item: pystac.Item, granule: untangle.Element) -> None:
     """Function checks the geometry within the attributes of the STAC item and
     the HLS_VI granule
 
@@ -222,11 +224,11 @@ def process_view_geometry(item, granule):
     for attribute in granule.AdditionalAttributes.AdditionalAttribute:
         if attribute.Name == "MEAN_SUN_AZIMUTH_ANGLE":
             view_extension.sun_azimuth = float(attribute.Values.Value.cdata)
-        if attribute.Name == "MEAN_VIEW_AZIMUTH_ANGLE":
+        elif attribute.Name == "MEAN_VIEW_AZIMUTH_ANGLE":
             view_extension.azimuth = float(attribute.Values.Value.cdata)
 
 
-def process_scientific(item, granule):
+def process_scientific(item: pystac.Item, granule: untangle.Element) -> None:
     """Function checks the attribute value in STAC item and the granule.
 
     Args:
@@ -239,7 +241,7 @@ def process_scientific(item, granule):
             scientific_extension.doi = attribute.Values.Value.cdata
 
 
-def cmr_to_item(hls_vi_metadata, endpoint, version):
+def cmr_to_item(hls_vi_metadata: str, endpoint: str, version: str) -> Mapping[str, Any]:
     """Function creates a pystac item from the CMR XML file provided as an input
 
     Args:
@@ -280,10 +282,13 @@ def cmr_to_item(hls_vi_metadata, endpoint, version):
     process_projection(item, granule, index_file)
     process_view_geometry(item, granule)
     process_scientific(item, granule)
-    return item.to_dict()
+
+    return item.to_dict()  # type: ignore
 
 
-def create_item(hls_vi_metadata, out_json, endpoint, version):
+def create_item(
+    hls_vi_metadata: str, out_json: str, endpoint: str, version: str
+) -> None:
     """Function acts as an endpoint to create a STAC item for the HLS_VI granule.
 
     Args:
@@ -298,7 +303,7 @@ def create_item(hls_vi_metadata, out_json, endpoint, version):
         json.dump(item, outfile)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--cmr_xml",

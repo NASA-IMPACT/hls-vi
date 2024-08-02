@@ -1,15 +1,18 @@
 import getopt
+import importlib_resources
 import os
 import sys
-import xml.etree.ElementTree as ET
+
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Tuple
 
 import rasterio
+from lxml import etree as ET
+from lxml.etree import Element, ElementBase
 
 
-def generate_metadata(input_dir: Path, output_dir: Path):
+def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     """
     Create CMR XML metadata file for an HLS VI granule.
 
@@ -23,10 +26,10 @@ def generate_metadata(input_dir: Path, output_dir: Path):
             to this directory with the name `HLS-VI.*.cmr.xml`.
     """
     metadata_path = next(input_dir.glob("HLS.*.cmr.xml"))
-    tree = ET.parse(metadata_path)
+    tree = ET.parse(metadata_path, None)
 
     with rasterio.open(next(output_dir.glob("*.tif"))) as vi_tif:
-        sensing_times = vi_tif.tags()["SENSING_TIME"].split(";")
+        sensing_times = [t.strip() for t in vi_tif.tags()["SENSING_TIME"].split(";")]
         sensing_time_begin, sensing_time_end = sensing_times[0], sensing_times[-1]
         processing_time = vi_tif.tags()["HLS_VI_PROCESSING_TIME"]
 
@@ -61,6 +64,9 @@ def generate_metadata(input_dir: Path, output_dir: Path):
     tree.find("Temporal/RangeDateTime/BeginningDateTime").text = sensing_time_begin
     tree.find("Temporal/RangeDateTime/EndingDateTime").text = sensing_time_end
 
+    with (importlib_resources.files("hls_vi") / "schema" / "Granule.xsd").open() as xsd:
+        ET.XMLSchema(file=xsd).assertValid(tree)
+
     tree.write(
         output_dir / metadata_path.name.replace("HLS", "HLS-VI"),
         encoding="utf-8",
@@ -68,17 +74,17 @@ def generate_metadata(input_dir: Path, output_dir: Path):
     )
 
 
-def set_additional_attribute(attrs: ET.Element, name: str, value: str):
-    attr = attrs.find(f'./AdditionalAttribute[Name="{name}"]')
+def set_additional_attribute(attrs: ElementBase, name: str, value: str) -> None:
+    attr = attrs.find(f'./AdditionalAttribute[Name="{name}"]', None)
 
     if attr is not None:
         attr.find(".//Value").text = value
     else:
-        attr = ET.Element("AdditionalAttribute")
-        attr_name = ET.Element("Name")
+        attr = Element("AdditionalAttribute", None, None)
+        attr_name = Element("Name", None, None)
         attr_name.text = name
-        attr_values = ET.Element("Values")
-        attr_value = ET.Element("Value")
+        attr_values = Element("Values", None, None)
+        attr_value = Element("Value", None, None)
         attr_value.text = value
         attr_values.append(attr_value)
         attr.append(attr_name)
@@ -115,7 +121,7 @@ def parse_args() -> Tuple[Path, Path]:
     return Path(input_dir), Path(output_dir)
 
 
-def main():
+def main() -> None:
     input_dir, output_dir = parse_args()
     generate_metadata(input_dir=input_dir, output_dir=output_dir)
 

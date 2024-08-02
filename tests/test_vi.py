@@ -16,6 +16,8 @@ from hls_vi.generate_indices import (
 )
 from hls_vi.generate_stac_items import create_item
 
+ISO_8601_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
 
 def find_index_by_long_name(long_name: str) -> Index:
     for index in Index:
@@ -53,9 +55,9 @@ def assert_tifs_equal(granule: Granule, actual: Path, expected: Path):
             assert actual_time_str is not None
             assert expected_time_str is not None
 
-            actual_time = datetime.strptime(actual_time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            actual_time = datetime.strptime(actual_time_str, ISO_8601_DATETIME_FORMAT)
             expected_time = datetime.strptime(
-                expected_time_str, "%Y-%m-%dT%H:%M:%S.%fZ"
+                expected_time_str, ISO_8601_DATETIME_FORMAT
             )
 
             # The actual time should be greater than the expected time because
@@ -71,7 +73,7 @@ def remove_item(
     return {k: v for k, v in mapping.items() if k != key}, mapping.get(key)
 
 
-def remove_element(root: ET.Element, path: str) -> None:
+def remove_element(root: ET.Element, path: str) -> ET.Element:
     parent_path = "/".join(path.split("/")[:-1])
     parent = root.find(parent_path)
     child = root.find(path)
@@ -81,15 +83,20 @@ def remove_element(root: ET.Element, path: str) -> None:
 
     parent.remove(child)
 
+    return child
+
 
 def remove_datetime_elements(tree: ET.ElementTree) -> ET.ElementTree:
     root = tree.getroot()
 
-    remove_element(root, "./InsertTime")
-    remove_element(root, "./LastUpdate")
-    remove_element(root, "./DataGranule/ProductionDateTime")
-    remove_element(root, "./Temporal/RangeDateTime/BeginningDateTime")
-    remove_element(root, "./Temporal/RangeDateTime/EndingDateTime")
+    for path in (
+        "./InsertTime",
+        "./LastUpdate",
+        "./DataGranule/ProductionDateTime",
+        "./Temporal/RangeDateTime/BeginningDateTime",
+        "./Temporal/RangeDateTime/EndingDateTime",
+    ):
+        remove_element(root, path)
 
     return tree
 
