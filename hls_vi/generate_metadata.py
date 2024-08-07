@@ -26,7 +26,7 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
             to this directory with the name `HLS-VI.*.cmr.xml`.
     """
     metadata_path = next(input_dir.glob("HLS.*.cmr.xml"))
-    tree = ET.parse(metadata_path, None)
+    tree = ET.parse(str(metadata_path))
 
     with rasterio.open(next(output_dir.glob("*.tif"))) as vi_tif:
         sensing_times = [t.strip() for t in vi_tif.tags()["SENSING_TIME"].split(";")]
