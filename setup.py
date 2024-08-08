@@ -2,8 +2,9 @@ from setuptools import setup
 
 setup(
     name="hls_vi",
-    version="0.1",
+    version="1.10",
     packages=["hls_vi"],
+    include_package_data=True,
     install_requires=[
         "dataclasses",
         "geojson",
