@@ -68,7 +68,7 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
         ET.XMLSchema(file=xsd).assertValid(tree)
 
     tree.write(
-        output_dir / metadata_path.name.replace("HLS", "HLS-VI"),
+        str(output_dir / metadata_path.name.replace("HLS", "HLS-VI")),
         encoding="utf-8",
         xml_declaration=True,
     )
