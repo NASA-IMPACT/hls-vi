@@ -4,4 +4,4 @@ build:
 	docker compose build
 
 test:
-	docker compose run --build tox
+	docker compose run --rm --build tox
