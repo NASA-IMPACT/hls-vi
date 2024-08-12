@@ -1,6 +1,7 @@
 import getopt
 import importlib_resources
 import os
+import re
 import sys
 
 from datetime import datetime, timezone
@@ -10,6 +11,62 @@ from typing import Tuple
 import rasterio
 from lxml import etree as ET
 from lxml.etree import Element, ElementBase
+
+
+def parse_sensing_time(sensing_time: str) -> Tuple[str, str]:
+    """Parse SENSING_TIME tag value into (start, end) tuple.
+
+    Expect `sensing_time` in one of the following forms, where each `DT` is an ISO 8601
+    combined date and time representation, with a `Z` suffix (and optional whitespace
+    surrounding `+` and `;` separators):
+
+    - `DT`
+    - `DT; DT`
+    - `DT + DT; DT`
+    - `DT; DT + DT`
+    - `DT + DT; DT + DT`
+
+    Sort all `DT` values in ascending order and return the min and max, respectively,
+    in a tuple.  When only one `DT` value is specified, both values in the tuple are
+    the same value.
+
+    Examples:
+
+    >>> parse_sensing_time("2024-04-29T21:11:59.7221750Z")
+    ('2024-04-29T21:11:59.7221750Z', '2024-04-29T21:11:59.7221750Z')
+    >>> parse_sensing_time(";2024-04-29T21:11:59.7221750Z")
+    ('2024-04-29T21:11:59.7221750Z', '2024-04-29T21:11:59.7221750Z')
+    >>> parse_sensing_time("2024-04-29T21:11:59.7221750Z;")
+    ('2024-04-29T21:11:59.7221750Z', '2024-04-29T21:11:59.7221750Z')
+    >>> parse_sensing_time("2024-04-29T21:11:59.7221750Z+")
+    ('2024-04-29T21:11:59.7221750Z', '2024-04-29T21:11:59.7221750Z')
+    >>> parse_sensing_time(
+    ... "2024-04-29T21:12:59.7221750Z ; 2024-04-29T21:11:59.7221750Z"
+    ... )
+    ('2024-04-29T21:11:59.7221750Z', '2024-04-29T21:12:59.7221750Z')
+    >>> parse_sensing_time(
+    ... "2024-04-29T21:12:59.7221750Z + 2024-04-29T21:11:59.7221750Z;"
+    ... )
+    ('2024-04-29T21:11:59.7221750Z', '2024-04-29T21:12:59.7221750Z')
+    >>> parse_sensing_time(
+    ... ";2024-04-29T21:12:59.7221750Z + 2024-04-29T21:11:59.7221750Z"
+    ... )
+    ('2024-04-29T21:11:59.7221750Z', '2024-04-29T21:12:59.7221750Z')
+    >>> parse_sensing_time(
+    ... "2024-04-29T21:10:59.7221750Z;"
+    ... "2024-04-29T21:12:59.7221750Z + 2024-04-29T21:11:59.7221750Z;"
+    ... )
+    ('2024-04-29T21:10:59.7221750Z', '2024-04-29T21:12:59.7221750Z')
+    >>> parse_sensing_time(
+    ... "2024-04-29T21:12:59.7221750Z+2024-04-29T21:11:59.7221750Z;"
+    ... "2024-04-29T21:10:59.7221750Z + 2024-04-29T21:11:59.7221750Z;"
+    ... )
+    ('2024-04-29T21:10:59.7221750Z', '2024-04-29T21:12:59.7221750Z')
+    """
+    sensing_times = sorted(
+        t.strip() for t in re.split("[+;]", sensing_time) if t.strip()
+    )
+    return sensing_times[0], sensing_times[-1]
 
 
 def generate_metadata(input_dir: Path, output_dir: Path) -> None:
@@ -29,9 +86,10 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     tree = ET.parse(str(metadata_path))
 
     with rasterio.open(next(output_dir.glob("*.tif"))) as vi_tif:
-        sensing_times = [t.strip() for t in vi_tif.tags()["SENSING_TIME"].split(";")]
-        sensing_time_begin, sensing_time_end = sensing_times[0], sensing_times[-1]
-        processing_time = vi_tif.tags()["HLS_VI_PROCESSING_TIME"]
+        tags = vi_tif.tags()
+
+    sensing_time_begin, sensing_time_end = parse_sensing_time(tags["SENSING_TIME"])
+    processing_time = tags["HLS_VI_PROCESSING_TIME"]
 
     granule_ur = tree.find("GranuleUR")
     granule_ur.text = granule_ur.text.replace("HLS", "HLS-VI")
