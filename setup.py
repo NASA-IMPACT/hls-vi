@@ -2,14 +2,14 @@ from setuptools import setup
 
 setup(
     name="hls_vi",
-    version="1.10",
+    version="1.12",
     packages=["hls_vi"],
     include_package_data=True,
     install_requires=[
         "dataclasses",
         "geojson",
         "importlib_resources",
-        "lxml",
+        "lxml==3.6.0",
         "numpy~=1.19.0",
         "pystac[validation]==1.0.0rc2",
         "rasterio",

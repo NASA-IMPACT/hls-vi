@@ -5,6 +5,8 @@ RUN : \
     && apt-get install -y --no-install-recommends \
     build-essential \
     libjpeg-dev \
+    libxml2-dev \
+    libxslt1-dev \
     zlib1g-dev \
     python3.6 \
     python3-dev \
