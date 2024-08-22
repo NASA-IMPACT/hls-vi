@@ -6,7 +6,7 @@ import sys
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 import rasterio
 from lxml import etree as ET
@@ -112,6 +112,7 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
         if "L30" in metadata_path.name
         else "10.5067/HLS/HLSS30_VI.002",
     )
+    normalize_additional_attributes(tree.find("AdditionalAttributes"))
 
     data_granule = tree.find("DataGranule")
     data_granule.remove(data_granule.find("DataGranuleSizeInBytes"))
@@ -130,6 +131,42 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
         encoding="utf-8",
         xml_declaration=True,
     )
+
+
+def normalize_additional_attributes(container: ElementBase) -> None:
+    """Normalize additional attribute values.
+
+    On rare occassions, granule data is split and recombined upstream.  When this
+    occurs, the associated metadata is also split and recombined, resulting in values
+    for additional attributes that are created by joining the separate parts with the
+    string `" + "`.
+
+    For example, the PROCESSING_BASELINE value of the HLS metadata resulting from this
+    scenario might be `05.11 + 05.11` instead of simply `05.11`.  When the CMR contains
+    data type constraints on these additional attribute values, such values can cause
+    CMR to reject the metadata.  Continuing this example, when PROCESSING_BASELINE is
+    constrained to `float` values, the string `05.11 + 05.11` will fail `float` parsing
+    and the CMR will raise an error.
+
+    Therefore, we must "normalize" such additional attribute values by simply splitting
+    around the `" + "` and (arbitrarily) using the first value as the value of the
+    additional attribute.
+    """
+    attrs: List[ElementBase] = container.findall("./AdditionalAttribute", None)
+
+    for attr in attrs:
+        value_element: Optional[ElementBase] = attr.find(".//Value", None)
+        value_text: str = value_element.text if value_element is not None else ""
+
+        if value_element is not None:
+            # Replace the text of the additional attribute with the first value
+            # obtained by splitting the text on " + ".  If the text does not contain
+            # " + ", the text remains the same.  For example, "05.11".split(" + ") is
+            # simply ["05.11"], so taking the first element simply produces "05.11".
+            normalized = value_text.split(" + ", 1)[0].strip()
+            value_element.text = (
+                normalized  # pyright: ignore[reportAttributeAccessIssue]
+            )
 
 
 def set_additional_attribute(attrs: ElementBase, name: str, value: str) -> None:
