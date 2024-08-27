@@ -288,7 +288,7 @@
     <AdditionalAttribute>
       <Name>PROCESSING_BASELINE</Name>
       <Values>
-        <Value>05.10</Value>
+        <Value>05.11 + 05.11</Value>
       </Values>
     </AdditionalAttribute>
     <AdditionalAttribute>
