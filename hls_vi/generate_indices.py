@@ -315,7 +315,6 @@ def savi(data: BandData) -> np.ma.masked_array:
 
 def tvi(data: BandData) -> np.ma.masked_array:
     g, r, nir = data[Band.G], data[Band.R], data[Band.NIR]
-    # We do NOT multiply by 10_000 like we do for other indices.
     return (120 * (nir - g) - 200 * (r - g)) / 2  # pyright: ignore[reportReturnType]
 
 
@@ -328,7 +327,7 @@ class Index(Enum):
     NDVI = ("Normalized Difference Vegetation Index",)
     NDWI = ("Normalized Difference Water Index",)
     SAVI = ("Soil-Adjusted Vegetation Index",)
-    TVI = ("Triangular Vegetation Index", 1.0)
+    TVI = ("Triangular Vegetation Index", 0.01)
 
     def __init__(self, long_name: str, scale_factor: SupportsFloat = 0.0001) -> None:
         function_name = self.name.lower()
@@ -343,7 +342,10 @@ class Index(Enum):
 
     def __call__(self, data: BandData) -> np.ma.masked_array:
         scaled_index = self.compute_index(data) / self.scale_factor
-        return np.ma.round(scaled_index, decimals=4).astype(np.int16)
+        # We need to round to whole numbers (i.e., 0 decimal places, which is
+        # the default for np.round) because we convert to integer values, but
+        # numpy's conversion to integer types performs truncation, not rounding.
+        return np.ma.round(scaled_index).astype(np.int16)
 
 
 def parse_args() -> Tuple[Path, Path, str]:
