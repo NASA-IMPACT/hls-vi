@@ -19,7 +19,7 @@ setup(
     ],
     extras_require={
         "test": [
-            "black[jupyter]==21.12b0",
+            "black[jupyter]==22.8.0",  # Last version to support Python 3.6 runtime
             "flake8",
             "mypy",
             "pytest",

@@ -38,5 +38,6 @@ where:
 You can run tests using Docker:
 
 ```bash
-make test
+make test           # Run all tests
+make test-metadata  # Run only CMR and STAC metadata tests
 ```

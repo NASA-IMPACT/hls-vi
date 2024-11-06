@@ -21,4 +21,4 @@ RUN : \
 WORKDIR /hls_vi
 COPY ./ ./
 
-CMD ["tox", "-r", "-v"]
+ENTRYPOINT [ "tox" ]
