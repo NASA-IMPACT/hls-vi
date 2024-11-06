@@ -172,7 +172,6 @@ def normalize_additional_attribute(attr_el: ElementBase) -> None:
         # obtained by splitting the text on " + ".  If the text does not contain
         # " + ", the text remains the same.  For example, "05.11".split(" + ") is
         # simply ["05.11"], so taking the first element simply produces "05.11".
-        # value_el = ET.SubElement(values_el, "Value", attrib=None, nsmap=None)
         el.text = el.text.split(" + ", 1)[0].strip()
 
 
