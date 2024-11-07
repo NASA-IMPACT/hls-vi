@@ -6,7 +6,7 @@ import sys
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import rasterio
 from lxml import etree as ET
@@ -83,7 +83,7 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
             to this directory with the name `HLS-VI.*.cmr.xml`.
     """
     metadata_path = next(input_dir.glob("HLS.*.cmr.xml"))
-    tree = ET.parse(str(metadata_path))
+    tree = ET.parse(str(metadata_path), None)
 
     with rasterio.open(next(output_dir.glob("*.tif"))) as vi_tif:
         tags = vi_tif.tags()
@@ -123,7 +123,13 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     tree.find("Temporal/RangeDateTime/BeginningDateTime").text = sensing_time_begin
     tree.find("Temporal/RangeDateTime/EndingDateTime").text = sensing_time_end
 
-    with (importlib_resources.files("hls_vi") / "schema" / "Granule.xsd").open() as xsd:
+    tree.find("DataFormat").text = "COG"
+
+    with (
+        importlib_resources.files("hls_vi")
+        / "schema"
+        / "Granule.xsd"  # pyright: ignore[reportOperatorIssue]
+    ).open() as xsd:
         ET.XMLSchema(file=xsd).assertValid(tree)
 
     tree.write(
@@ -152,21 +158,21 @@ def normalize_additional_attributes(container: ElementBase) -> None:
     around the `" + "` and (arbitrarily) using the first value as the value of the
     additional attribute.
     """
-    attrs: List[ElementBase] = container.findall("./AdditionalAttribute", None)
+    attr_els: List[ElementBase] = container.findall("./AdditionalAttribute", None)
 
-    for attr in attrs:
-        value_element: Optional[ElementBase] = attr.find(".//Value", None)
-        value_text: str = value_element.text if value_element is not None else ""
+    for attr_el in attr_els:
+        normalize_additional_attribute(attr_el)
 
-        if value_element is not None:
-            # Replace the text of the additional attribute with the first value
-            # obtained by splitting the text on " + ".  If the text does not contain
-            # " + ", the text remains the same.  For example, "05.11".split(" + ") is
-            # simply ["05.11"], so taking the first element simply produces "05.11".
-            normalized = value_text.split(" + ", 1)[0].strip()
-            value_element.text = (
-                normalized  # pyright: ignore[reportAttributeAccessIssue]
-            )
+
+def normalize_additional_attribute(attr_el: ElementBase) -> None:
+    values_el: ElementBase = attr_el.find("./Values", None)
+
+    for el in iter(values_el):
+        # Replace the text of the additional attribute value with the first value
+        # obtained by splitting the text on " + ".  If the text does not contain
+        # " + ", the text remains the same.  For example, "05.11".split(" + ") is
+        # simply ["05.11"], so taking the first element simply produces "05.11".
+        el.text = el.text.split(" + ", 1)[0].strip()
 
 
 def set_additional_attribute(attrs: ElementBase, name: str, value: str) -> None:

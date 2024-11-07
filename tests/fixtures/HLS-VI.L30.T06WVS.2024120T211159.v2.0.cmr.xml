@@ -245,7 +245,7 @@
   </OnlineAccessURLs>
   <OnlineResources>
   </OnlineResources>
-  <DataFormat>Cloud Optimized GeoTIFF (COG)</DataFormat>
+  <DataFormat>COG</DataFormat>
   <AssociatedBrowseImageUrls>
   </AssociatedBrowseImageUrls>
 </Granule>
