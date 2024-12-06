@@ -375,6 +375,16 @@ class Index(Enum):
 
     def __call__(self, data: BandData) -> np.ma.masked_array:
         scaled_index = self.compute_index(data) / self.scale_factor
+
+        # Before converting to int16 we want to clamp the values of our float to
+        # the min/max bounds of an int16 to prevent values wrapping around
+        int16_info = np.iinfo("int16")
+        scaled_index = np.ma.clip(
+            scaled_index,
+            a_min=int16_info.min,
+            a_max=int16_info.max
+        )
+
         # We need to round to whole numbers (i.e., 0 decimal places, which is
         # the default for np.round) because we convert to integer values, but
         # numpy's conversion to integer types performs truncation, not rounding.
