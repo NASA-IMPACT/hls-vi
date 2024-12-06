@@ -361,7 +361,12 @@ class Index(Enum):
     SAVI = ("Soil-Adjusted Vegetation Index",)
     TVI = ("Triangular Vegetation Index", 0.01)
 
-    def __init__(self, long_name: str, scale_factor: SupportsFloat = 0.0001, fill_value: int = -19_999) -> None:
+    def __init__(
+        self,
+        long_name: str,
+        scale_factor: SupportsFloat = 0.0001,
+        fill_value: int = -19_999,
+    ) -> None:
         function_name = self.name.lower()
         index_function: Optional[IndexFunction] = globals().get(function_name)
 
@@ -381,9 +386,7 @@ class Index(Enum):
         # the min/max bounds of an int16 to prevent values wrapping around
         int16_info = np.iinfo("int16")
         scaled_index = np.ma.clip(
-            scaled_index,
-            a_min=int16_info.min,
-            a_max=int16_info.max
+            scaled_index, a_min=int16_info.min, a_max=int16_info.max
         )
 
         # We need to round to whole numbers (i.e., 0 decimal places, which is
