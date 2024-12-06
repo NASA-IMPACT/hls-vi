@@ -255,11 +255,11 @@ def write_granule_index(
         dtype=data.dtype,
         crs=granule.crs,
         transform=granule.transform,
-        nodata=data.fill_value,
+        nodata=index.fill_value,
     ) as dst:
         dst.offsets = (0.0,)
         dst.scales = (index.scale_factor,)
-        dst.write(data.filled(), 1)
+        dst.write(data.filled(fill_value=index.fill_value), 1)
         dst.update_tags(
             **granule.tags,
             long_name=index.long_name,
@@ -334,7 +334,7 @@ class Index(Enum):
     SAVI = ("Soil-Adjusted Vegetation Index",)
     TVI = ("Triangular Vegetation Index", 0.01)
 
-    def __init__(self, long_name: str, scale_factor: SupportsFloat = 0.0001) -> None:
+    def __init__(self, long_name: str, scale_factor: SupportsFloat = 0.0001, fill_value: int = -19_999) -> None:
         function_name = self.name.lower()
         index_function: Optional[IndexFunction] = globals().get(function_name)
 
@@ -344,6 +344,7 @@ class Index(Enum):
         self.long_name = long_name
         self.compute_index = index_function
         self.scale_factor = float(scale_factor)
+        self.fill_value = fill_value
 
     def __call__(self, data: BandData) -> np.ma.masked_array:
         scaled_index = self.compute_index(data) / self.scale_factor
