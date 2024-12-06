@@ -180,8 +180,13 @@ def read_band(tif_path: Path) -> np.ma.masked_array:
     with rasterio.open(tif_path) as tif:
         data = tif.read(1, masked=True, fill_value=-9999) / 10_000
 
-    # Clamp surface reflectance values to the range [0, 1].
-    return np.ma.masked_outside(data, 0, 1)
+    # Clamp surface reflectance values to the range [0.0001, ∞]
+    # * We consider 0% reflectance to be invalid data
+    # * We want to retain values >100% reflectance. This is a known issue with
+    #   atmospheric compensation where it's possible to have values >100% reflectance
+    #   due to unmet assumptions about topography.
+    # See, https://github.com/NASA-IMPACT/hls-vi/issues/44#issuecomment-2520592212
+    return np.ma.masked_less_equal(data, 0)
 
 
 def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
