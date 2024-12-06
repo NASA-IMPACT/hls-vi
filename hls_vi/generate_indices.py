@@ -375,6 +375,7 @@ class Index(Enum):
 
     def __call__(self, data: BandData) -> np.ma.masked_array:
         scaled_index = self.compute_index(data) / self.scale_factor
+        scaled_index.fill_value = self.fill_value
 
         # Before converting to int16 we want to clamp the values of our float to
         # the min/max bounds of an int16 to prevent values wrapping around
