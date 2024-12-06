@@ -197,6 +197,31 @@ def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
     return np.ma.masked_array(data, fmask & cloud_like != 0)
 
 
+def apply_union_of_masks(bands: list[np.ma.masked_array]) -> list[np.ma.masked_array]:
+    """Mask all bands according to valid data across all bands
+
+    This is intended to reduce noise by masking spectral indices if
+    any reflectance band is outside of expected range of values ([1, 10000]).
+    For example the NBR index only looks at NIR and SWIR bands, but we might have
+    negative reflectance in visible bands that indicate the retrieval has issues
+    and should not be used.
+
+    Reference: https://github.com/NASA-IMPACT/hls-vi/issues/44
+    """
+    if not bands:
+        return []
+
+    # NB - numpy masked arrays "true" is a masked value, "false" is unmasked
+    # so bitwise "or" will  mask if "any" band has a masked value for that pixel
+    mask = bands[0].mask.copy()
+    for band in bands[1:]:
+        mask |= band.mask
+
+    for band in bands:
+        band.mask = mask
+    return bands
+
+
 def select_tags(granule_id: GranuleId, tags: Tags) -> Tags:
     """
     Selects tags from the input tags that are relevant to the HLS VI product.

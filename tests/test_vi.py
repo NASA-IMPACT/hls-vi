@@ -6,12 +6,14 @@ import contextlib
 import io
 import json
 
+import numpy as np
 import pytest
 import rasterio
 from hls_vi.generate_metadata import generate_metadata
 from hls_vi.generate_indices import (
     Granule,
     Index,
+    apply_union_of_masks,
     generate_vi_granule,
 )
 from hls_vi.generate_stac_items import create_item
@@ -99,6 +101,24 @@ def remove_datetime_elements(tree: ET.ElementTree) -> ET.ElementTree:
         remove_element(root, path)
 
     return tree
+
+
+def test_apply_union_of_masks():
+    bands = [
+        np.ma.array(
+            np.array([5, 4, 3, 2]),
+            mask=np.array([True, False, False, True]),
+        ),
+        np.ma.array(
+            np.array([2, 3, 4, 5]),
+            mask=np.array([False, True, False, True]),
+        ),
+    ]
+    masked = apply_union_of_masks(bands)
+    # same masks for all
+    np.testing.assert_array_equal(masked[0].mask, masked[1].mask)
+    # test mask logic
+    np.testing.assert_array_equal(masked[0].mask, np.array([True, True, False, True]))
 
 
 def assert_indices_equal(granule: Granule, actual_dir: Path, expected_dir: Path):
