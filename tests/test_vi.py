@@ -134,6 +134,7 @@ def create_fake_granule_data(
         "height": 1,
         "width": 1,
         "count": 1,
+        "driver": "GTiff",
     }
     for band, value in sr.items():
         band_id = granule.instrument.value[0](band).name
