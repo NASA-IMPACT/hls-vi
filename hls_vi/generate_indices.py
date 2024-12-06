@@ -199,7 +199,7 @@ def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
     return np.ma.masked_array(data, fmask & cloud_like != 0)
 
 
-def apply_union_of_masks(bands: list[np.ma.masked_array]) -> list[np.ma.masked_array]:
+def apply_union_of_masks(bands: List[np.ma.masked_array]) -> List[np.ma.masked_array]:
     """Mask all bands according to valid data across all bands
 
     This is intended to reduce noise by masking spectral indices if
