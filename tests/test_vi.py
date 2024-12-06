@@ -142,10 +142,9 @@ def create_fake_granule_data(dest: Path, granule_id: str, sr: dict[Band, int], f
             nodata=-9999,
             **profile,
         ) as dst:
-            scaled = value * 10_000
-            data = np.array([[[scaled]]], dtype=np.int16)
+            data = np.array([[[value]]], dtype=np.int16)
             dst.write(data)
-            dst.scales = (10_000,)
+            dst.scales = (1 / 10_000,)
 
     with rasterio.open(dest / f"{granule_id}.Fmask.tif", "w", dtype="uint8", **profile) as dst:
         dst.write(np.array([[[fmask]]], dtype=np.uint8))
@@ -239,16 +238,22 @@ def test_granule_bands_masking(
        will be masked.
     """
     granule_id = "HLS.S30.T01GEL.2024288T213749.v2.0"
-    granule_data = dict(zip(Band, [r / 10_000 for r in reflectances]))
+    granule_data = dict(zip(Band, reflectances))
     create_fake_granule_data(tmp_path, granule_id, granule_data, fmask)
     granule = read_granule_bands(tmp_path, granule_id)
 
-    for i, band in enumerate(Band):
+    for reflectance, band in zip(reflectances, Band):
         test_masked = granule.data[band].mask[0][0]
         assert test_masked is np.bool_(masked)
 
         test_value = granule.data[band].data[0][0]
-        assert test_value == np.round(reflectances[i] / 10_000, 4)
+        # expected value will not be scaled if it's nodata value
+        if reflectance == -9999:
+            expected_value = -9999
+        else:
+            expected_value = np.round(reflectance / 10_000, 4)
+
+        assert test_value == expected_value
 
 
 def assert_indices_equal(granule: Granule, actual_dir: Path, expected_dir: Path):
