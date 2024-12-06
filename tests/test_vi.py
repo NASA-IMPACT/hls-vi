@@ -124,7 +124,9 @@ def test_apply_union_of_masks():
     np.testing.assert_array_equal(masked[0].mask, np.array([True, True, False, True]))
 
 
-def create_fake_granule_data(dest: Path, granule_id: str, sr: dict[Band, int], fmask: int):
+def create_fake_granule_data(
+    dest: Path, granule_id: str, sr: dict[Band, int], fmask: int
+):
     """Generate fake granule data for a single pixel"""
     granule = GranuleId.from_string(granule_id)
 
@@ -146,78 +148,68 @@ def create_fake_granule_data(dest: Path, granule_id: str, sr: dict[Band, int], f
             dst.write(data)
             dst.scales = (1 / 10_000,)
 
-    with rasterio.open(dest / f"{granule_id}.Fmask.tif", "w", dtype="uint8", **profile) as dst:
+    with rasterio.open(
+        dest / f"{granule_id}.Fmask.tif", "w", dtype="uint8", **profile
+    ) as dst:
         dst.write(np.array([[[fmask]]], dtype=np.uint8))
 
 
-@pytest.mark.parametrize(["reflectances", "fmask", "masked"], [
-    pytest.param(
-        [42] * 6,
-        int("00000000", 2),
-        False,
-        id="all clear"
-    ),
-    pytest.param(
-        [-9999] * 6,
-        int("00000000", 2),
-        True,
-        id="input is nodata"
-    ),
-    pytest.param(
-        [-1] * 6,
-        int("00000000", 2),
-        True,
-        id="all negative"
-    ),
-    pytest.param(
-        [-1, 42, 42, 42, 42, 42],
-        int("00000000", 2),
-        True,
-        id="one negative",
-    ),
-    pytest.param(
-        [0, 42, 42, 42, 42, 42],
-        int("00000000", 2),
-        True,
-        id="zero reflectance",
-    ),
-    pytest.param(
-        [10_001] * 6,
-        int("00000000", 2),
-        False,
-        id="above 100% reflectance",
-    ),
-    pytest.param(
-        [42] * 6,
-        int("00000010", 2),
-        True,
-        id="cloudy",
-    ),
-    pytest.param(
-        [42] * 6,
-        int("00000100", 2),
-        True,
-        id="cloud shadow",
-    ),
-    pytest.param(
-        [42] * 6,
-        int("00001000", 2),
-        True,
-        id="adjacent to cloud / shadow",
-    ),
-    pytest.param(
-        [42] * 6,
-        int("00001110", 2),
-        True,
-        id="cloud, cloud shadow, adjacent to cloud / shadow",
-    ),
-    pytest.param(
-        [42] * 6,
-        int("11000000", 2),
-        False,
-        id="high aerosol not masked",
-    ),
-])
+@pytest.mark.parametrize(
+    ["reflectances", "fmask", "masked"],
+    [
+        pytest.param([42] * 6, int("00000000", 2), False, id="all clear"),
+        pytest.param([-9999] * 6, int("00000000", 2), True, id="input is nodata"),
+        pytest.param([-1] * 6, int("00000000", 2), True, id="all negative"),
+        pytest.param(
+            [-1, 42, 42, 42, 42, 42],
+            int("00000000", 2),
+            True,
+            id="one negative",
+        ),
+        pytest.param(
+            [0, 42, 42, 42, 42, 42],
+            int("00000000", 2),
+            True,
+            id="zero reflectance",
+        ),
+        pytest.param(
+            [10_001] * 6,
+            int("00000000", 2),
+            False,
+            id="above 100% reflectance",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00000010", 2),
+            True,
+            id="cloudy",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00000100", 2),
+            True,
+            id="cloud shadow",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00001000", 2),
+            True,
+            id="adjacent to cloud / shadow",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00001110", 2),
+            True,
+            id="cloud, cloud shadow, adjacent to cloud / shadow",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("11000000", 2),
+            False,
+            id="high aerosol not masked",
+        ),
+    ],
+)
 def test_granule_bands_masking(
     tmp_path: pytest.TempPathFactory,
     reflectances: list[int],
