@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple
 from xml.etree import ElementTree as ET
 import contextlib
 import io
@@ -125,7 +125,7 @@ def test_apply_union_of_masks():
 
 
 def create_fake_granule_data(
-    dest: Path, granule_id: str, sr: dict[Band, int], fmask: int
+    dest: Path, granule_id: str, sr: Dict[Band, int], fmask: int
 ):
     """Generate fake granule data for a single pixel"""
     granule = GranuleId.from_string(granule_id)
@@ -212,7 +212,7 @@ def create_fake_granule_data(
 )
 def test_granule_bands_masking(
     tmp_path: pytest.TempPathFactory,
-    reflectances: list[int],
+    reflectances: List[int],
     fmask: int,
     masked: bool,
 ):
