@@ -163,7 +163,9 @@ def read_granule_bands(input_dir: Path, id_str: str) -> Granule:
         fmask = tif.read(1, masked=False)
 
     tifnames = [f"{id_}.{band.name}.tif" for band in id_.instrument.bands]
-    data = [apply_fmask(read_band(input_dir / tifname), fmask) for tifname in tifnames]
+    data = apply_union_of_masks(
+        [apply_fmask(read_band(input_dir / tifname), fmask) for tifname in tifnames]
+    )
     harmonized_bands = [band.value for band in id_.instrument.bands]
 
     # Every band has the same CRS, transform, and tags, so we can use the first one to
