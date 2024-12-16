@@ -210,17 +210,15 @@ def apply_union_of_masks(bands: List[np.ma.masked_array]) -> List[np.ma.masked_a
 
     Reference: https://github.com/NASA-IMPACT/hls-vi/issues/44
     """
-    if not bands:
-        return []
-
     # NB - numpy masked arrays "true" is a masked value, "false" is unmasked
     # so bitwise "or" will  mask if "any" band has a masked value for that pixel
-    mask = bands[0].mask.copy()
-    for band in bands[1:]:
-        mask |= band.mask
+    mask = np.ma.nomask
+    for band in bands:
+        mask = np.ma.mask_or(mask, band.mask)
 
     for band in bands:
         band.mask = mask
+
     return bands
 
 
