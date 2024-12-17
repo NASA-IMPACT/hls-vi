@@ -1,18 +1,23 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple
 from xml.etree import ElementTree as ET
 import contextlib
 import io
 import json
 
+import numpy as np
 import pytest
 import rasterio
 from hls_vi.generate_metadata import generate_metadata
 from hls_vi.generate_indices import (
+    Band,
     Granule,
+    GranuleId,
     Index,
+    apply_union_of_masks,
     generate_vi_granule,
+    read_granule_bands,
 )
 from hls_vi.generate_stac_items import create_item
 
@@ -99,6 +104,149 @@ def remove_datetime_elements(tree: ET.ElementTree) -> ET.ElementTree:
         remove_element(root, path)
 
     return tree
+
+
+def test_apply_union_of_masks():
+    bands = [
+        np.ma.array(
+            np.array([5, 4, 3, 2]),
+            mask=np.array([True, False, False, True]),
+        ),
+        np.ma.array(
+            np.array([2, 3, 4, 5]),
+            mask=np.array([False, True, False, True]),
+        ),
+    ]
+    masked = apply_union_of_masks(bands)
+    # same masks for all
+    np.testing.assert_array_equal(masked[0].mask, masked[1].mask)
+    # test mask logic
+    np.testing.assert_array_equal(masked[0].mask, np.array([True, True, False, True]))
+
+
+def create_fake_granule_data(
+    dest: Path, granule_id: str, sr: Dict[Band, int], fmask: int
+):
+    """Generate fake granule data for a single pixel"""
+    granule = GranuleId.from_string(granule_id)
+
+    profile = {
+        "height": 1,
+        "width": 1,
+        "count": 1,
+        "driver": "GTiff",
+    }
+    for band, value in sr.items():
+        band_id = granule.instrument.value[0](band).name
+        with rasterio.open(
+            dest / f"{granule_id}.{band_id}.tif",
+            "w",
+            dtype="int16",
+            nodata=-9999,
+            **profile,
+        ) as dst:
+            data = np.array([[[value]]], dtype=np.int16)
+            dst.write(data)
+            dst.scales = (1 / 10_000,)
+
+    with rasterio.open(
+        dest / f"{granule_id}.Fmask.tif", "w", dtype="uint8", **profile
+    ) as dst:
+        dst.write(np.array([[[fmask]]], dtype=np.uint8))
+
+
+@pytest.mark.parametrize(
+    ["reflectances", "fmask", "masked"],
+    [
+        pytest.param([42] * 6, int("00000000", 2), False, id="all clear"),
+        pytest.param([-9999] * 6, int("00000000", 2), True, id="input is nodata"),
+        pytest.param([-1] * 6, int("00000000", 2), True, id="all negative"),
+        pytest.param(
+            [-1, 42, 42, 42, 42, 42],
+            int("00000000", 2),
+            True,
+            id="one negative",
+        ),
+        pytest.param(
+            [0, 42, 42, 42, 42, 42],
+            int("00000000", 2),
+            True,
+            id="zero reflectance",
+        ),
+        pytest.param(
+            [10_001] * 6,
+            int("00000000", 2),
+            False,
+            id="above 100% reflectance",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00000010", 2),
+            True,
+            id="cloudy",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00000100", 2),
+            True,
+            id="cloud shadow",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00001000", 2),
+            True,
+            id="adjacent to cloud / shadow",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("00001110", 2),
+            True,
+            id="cloud, cloud shadow, adjacent to cloud / shadow",
+        ),
+        pytest.param(
+            [42] * 6,
+            int("11000000", 2),
+            False,
+            id="high aerosol not masked",
+        ),
+    ],
+)
+def test_granule_bands_masking(
+    tmp_path: pytest.TempPathFactory,
+    reflectances: List[int],
+    fmask: int,
+    masked: bool,
+):
+    """Test masking criteria based on rules,
+
+    1. Mask masked data values from input (-9999)
+    2. Mask <= 0% surface reflectance
+    3. Do not mask >100% reflectance
+    4. Apply Fmask when bits are set for,
+        i) cloud shadow
+        ii) adjacent to cloud shadow
+        iii) cloud
+    5. A mask pixel in _any_ band should mask should mask the same pixel in _all_
+       bands. This ensures the VI outputs from any combination of reflectance bands
+       will be masked.
+    """
+    granule_id = "HLS.S30.T01GEL.2024288T213749.v2.0"
+    granule_data = dict(zip(Band, reflectances))
+    create_fake_granule_data(tmp_path, granule_id, granule_data, fmask)
+    granule = read_granule_bands(tmp_path, granule_id)
+
+    for reflectance, band in zip(reflectances, Band):
+        test_masked = granule.data[band].mask[0][0]
+        assert test_masked is np.bool_(masked)
+
+        test_value = granule.data[band].data[0][0]
+        # expected value will not be scaled if it's nodata value
+        if reflectance == -9999:
+            expected_value = -9999
+        else:
+            expected_value = np.round(reflectance / 10_000, 4)
+
+        assert test_value == expected_value
 
 
 def assert_indices_equal(granule: Granule, actual_dir: Path, expected_dir: Path):

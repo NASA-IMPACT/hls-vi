@@ -163,7 +163,9 @@ def read_granule_bands(input_dir: Path, id_str: str) -> Granule:
         fmask = tif.read(1, masked=False)
 
     tifnames = [f"{id_}.{band.name}.tif" for band in id_.instrument.bands]
-    data = [apply_fmask(read_band(input_dir / tifname), fmask) for tifname in tifnames]
+    data = apply_union_of_masks(
+        [apply_fmask(read_band(input_dir / tifname), fmask) for tifname in tifnames]
+    )
     harmonized_bands = [band.value for band in id_.instrument.bands]
 
     # Every band has the same CRS, transform, and tags, so we can use the first one to
@@ -180,8 +182,13 @@ def read_band(tif_path: Path) -> np.ma.masked_array:
     with rasterio.open(tif_path) as tif:
         data = tif.read(1, masked=True, fill_value=-9999) / 10_000
 
-    # Clamp surface reflectance values to the range [0, 1].
-    return np.ma.masked_outside(data, 0, 1)
+    # Clamp surface reflectance values to the range [0.0001, ∞]
+    # * We consider 0% reflectance to be invalid data
+    # * We want to retain values >100% reflectance. This is a known issue with
+    #   atmospheric compensation where it's possible to have values >100% reflectance
+    #   due to unmet assumptions about topography.
+    # See, https://github.com/NASA-IMPACT/hls-vi/issues/44#issuecomment-2520592212
+    return np.ma.masked_less_equal(data, 0)
 
 
 def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
@@ -190,6 +197,29 @@ def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
     # cloud shadow (bit 3), adjacent to cloud/shadow (bit 2), cloud (bit 1).
     cloud_like = int("00001110", 2)
     return np.ma.masked_array(data, fmask & cloud_like != 0)
+
+
+def apply_union_of_masks(bands: List[np.ma.masked_array]) -> List[np.ma.masked_array]:
+    """Mask all bands according to valid data across all bands
+
+    This is intended to reduce noise by masking spectral indices if
+    any reflectance band is outside of expected range of values ([1, 10000]).
+    For example the NBR index only looks at NIR and SWIR bands, but we might have
+    negative reflectance in visible bands that indicate the retrieval has issues
+    and should not be used.
+
+    Reference: https://github.com/NASA-IMPACT/hls-vi/issues/44
+    """
+    # NB - numpy masked arrays "true" is a masked value, "false" is unmasked
+    # so bitwise "or" will  mask if "any" band has a masked value for that pixel
+    mask = np.ma.nomask
+    for band in bands:
+        mask = np.ma.mask_or(mask, band.mask)
+
+    for band in bands:
+        band.mask = mask
+
+    return bands
 
 
 def select_tags(granule_id: GranuleId, tags: Tags) -> Tags:
@@ -250,11 +280,11 @@ def write_granule_index(
         dtype=data.dtype,
         crs=granule.crs,
         transform=granule.transform,
-        nodata=data.fill_value,
+        nodata=index.fill_value,
     ) as dst:
         dst.offsets = (0.0,)
         dst.scales = (index.scale_factor,)
-        dst.write(data.filled(), 1)
+        dst.write(data.filled(fill_value=index.fill_value), 1)
         dst.update_tags(
             **granule.tags,
             long_name=index.long_name,
@@ -329,7 +359,12 @@ class Index(Enum):
     SAVI = ("Soil-Adjusted Vegetation Index",)
     TVI = ("Triangular Vegetation Index", 0.01)
 
-    def __init__(self, long_name: str, scale_factor: SupportsFloat = 0.0001) -> None:
+    def __init__(
+        self,
+        long_name: str,
+        scale_factor: SupportsFloat = 0.0001,
+        fill_value: int = -19_999,
+    ) -> None:
         function_name = self.name.lower()
         index_function: Optional[IndexFunction] = globals().get(function_name)
 
@@ -339,9 +374,19 @@ class Index(Enum):
         self.long_name = long_name
         self.compute_index = index_function
         self.scale_factor = float(scale_factor)
+        self.fill_value = fill_value
 
     def __call__(self, data: BandData) -> np.ma.masked_array:
         scaled_index = self.compute_index(data) / self.scale_factor
+        scaled_index.fill_value = self.fill_value
+
+        # Before converting to int16 we want to clamp the values of our float to
+        # the min/max bounds of an int16 to prevent values wrapping around
+        int16_info = np.iinfo("int16")
+        scaled_index = np.ma.clip(
+            scaled_index, a_min=int16_info.min, a_max=int16_info.max
+        )
+
         # We need to round to whole numbers (i.e., 0 decimal places, which is
         # the default for np.round) because we convert to integer values, but
         # numpy's conversion to integer types performs truncation, not rounding.
