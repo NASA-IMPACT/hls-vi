@@ -9,7 +9,7 @@
   <DataGranule>
     <ProducerGranuleId>HLS-VI.L30.T06WVS.2024120T211159</ProducerGranuleId>
     <DayNightFlag>DAY</DayNightFlag>
-    <ProductionDateTime>UPDATE HLS Prodution DATETIME</ProductionDateTime>
+    <ProductionDateTime>UPDATE HLS Production DATETIME</ProductionDateTime>
     <LocalVersionId>2.0</LocalVersionId>
   </DataGranule>
   <Temporal>

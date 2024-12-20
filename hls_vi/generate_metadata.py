@@ -151,7 +151,7 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
 def normalize_additional_attributes(container: ElementBase) -> None:
     """Normalize additional attribute values.
 
-    On rare occassions, granule data is split and recombined upstream.  When this
+    On rare occasions, granule data is split and recombined upstream.  When this
     occurs, the associated metadata is also split and recombined, resulting in values
     for additional attributes that are created by joining the separate parts with the
     string `" + "`.
