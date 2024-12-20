@@ -10,6 +10,8 @@ setup(
         "geojson",
         "importlib_resources",
         "lxml==5.3.0",
+        # 1.19 is latest for our container, but ~1.19 allows
+        # a more recent 1.x version for our host
         "numpy~=1.19",
         "pystac[validation]==1.0.0rc2",
         "rasterio",
