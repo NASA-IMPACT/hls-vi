@@ -248,6 +248,14 @@
     </AdditionalAttribute>
   </AdditionalAttributes>
   <OnlineAccessURLs>
+    <OnlineAccessURL>
+      <URL>https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T06WVS.2024120T211159.v2.0/HLS.L30.T06WVS.2024120T211159.v2.0.Fmask.tif</URL>
+      <URLDescription>Download Fmask quality layer HLS.L30.T06WVS.2024120T211159.v2.0.Fmask.tif</URLDescription>
+    </OnlineAccessURL>
+    <OnlineAccessURL>
+      <URL>s3://lp-prod-protected//HLSL30.020/HLS.L30.T06WVS.2024120T211159.v2.0/HLS.L30.T06WVS.2024120T211159.v2.0.Fmask.tif</URL>
+      <URLDescription>This link provides direct download access via S3 to the Fmask quality layer HLS.L30.T06WVS.2024120T211159.v2.0.Fmask.tif</URLDescription>
+    </OnlineAccessURL>
   </OnlineAccessURLs>
   <OnlineResources>
   </OnlineResources>
