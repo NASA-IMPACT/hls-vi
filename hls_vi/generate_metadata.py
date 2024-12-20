@@ -207,21 +207,20 @@ def set_additional_attribute(attrs: ElementBase, name: str, value: str) -> None:
         attrs.append(attr)
 
 
-def append_fmask_online_access_urls(access_urls: ElementBase, hls_granule_ur: str) -> None:
+def append_fmask_online_access_urls(
+    access_urls: ElementBase, hls_granule_ur: str
+) -> None:
     """Include links to Fmask layer from HLS granule in metadata
 
     This is intended to help users find the relevant Fmask band without
     having to duplicate it into the HLS-VI product. See,
     https://github.com/NASA-IMPACT/hls-vi/issues/47
     """
-    prefix = (
-        "HLSL30.020" if hls_granule_ur.startswith("HLS.L30")
-        else "HLSS30.020"
-    )
+    prefix = "HLSL30.020" if hls_granule_ur.startswith("HLS.L30") else "HLSS30.020"
 
     http_attr = Element("OnlineAccessURL", None, None)
     http_attr_url = Element("URL", None, None)
-    http_attr_url.text = f"https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
+    http_attr_url.text = f"https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"  # noqa: E501
     http_attr_desc = Element("URLDescription", None, None)
     http_attr_desc.text = f"Download Fmask quality layer {hls_granule_ur}.Fmask.tif"
     http_attr.append(http_attr_url)
@@ -229,9 +228,11 @@ def append_fmask_online_access_urls(access_urls: ElementBase, hls_granule_ur: st
 
     s3_attr = Element("OnlineAccessURL", None, None)
     s3_attr_url = Element("URL", None, None)
-    s3_attr_url.text = f"s3://lp-prod-protected//{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
+    s3_attr_url.text = (
+        f"s3://lp-prod-protected//{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
+    )
     s3_attr_desc = Element("URLDescription", None, None)
-    s3_attr_desc.text = f"This link provides direct download access via S3 to the Fmask quality layer {hls_granule_ur}.Fmask.tif"
+    s3_attr_desc.text = f"This link provides direct download access via S3 to the Fmask quality layer {hls_granule_ur}.Fmask.tif"  # noqa: E501
     s3_attr.append(s3_attr_url)
     s3_attr.append(s3_attr_desc)
 
