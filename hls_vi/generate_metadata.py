@@ -92,7 +92,13 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     processing_time = tags["HLS_VI_PROCESSING_TIME"]
 
     granule_ur = tree.find("GranuleUR")
+    input_granule_ur = granule_ur.text
     granule_ur.text = granule_ur.text.replace("HLS", "HLS-VI")
+    set_additional_attribute(
+        tree.find("AdditionalAttributes"),
+        "Input_HLS_GranuleUR",
+        input_granule_ur,
+    )
 
     time_format = "%Y-%m-%dT%H:%M:%S.%fZ"
     formatted_date = datetime.now(timezone.utc).strftime(time_format)
@@ -124,6 +130,9 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     tree.find("Temporal/RangeDateTime/EndingDateTime").text = sensing_time_end
 
     tree.find("DataFormat").text = "COG"
+
+    # ensure any added attributes are indented
+    ET.indent(tree)
 
     with (
         importlib_resources.files("hls_vi")

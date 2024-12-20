@@ -14,6 +14,7 @@ xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="GranuleDelete" type="GranuleDelete">
   </xs:element>
   <xs:element name="GranuleUR" type="GranuleUR"></xs:element>
+  <xs:element name="Input_GranuleUR" type="GranuleUR"></xs:element>
   <xs:complexType name="GranuleMetaDataFile">
     <xs:annotation>
       <xs:documentation />

@@ -302,6 +302,12 @@
         <Value>https://doi.org</Value>
       </Values>
     </AdditionalAttribute>
+    <AdditionalAttribute>
+      <Name>Input_HLS_GranuleUR</Name>
+      <Values>
+        <Value>HLS.S30.T13RCN.2024128T173909.v2.0</Value>
+      </Values>
+    </AdditionalAttribute>
   </AdditionalAttributes>
   <OnlineAccessURLs>
   </OnlineAccessURLs>
