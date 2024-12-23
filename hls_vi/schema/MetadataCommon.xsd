@@ -446,7 +446,7 @@
 			</xs:sequence>
 		</xs:choice>
 	</xs:complexType>
-	<!-- #mark Emtpy Type -->
+	<!-- #mark Empty Type -->
 	<xs:complexType name="EmptyType">
 		<xs:annotation>
 			<xs:documentation>The element should contain no children. In
