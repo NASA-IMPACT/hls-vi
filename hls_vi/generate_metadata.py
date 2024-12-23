@@ -229,7 +229,7 @@ def append_fmask_online_access_urls(
     s3_attr = Element("OnlineAccessURL", None, None)
     s3_attr_url = Element("URL", None, None)
     s3_attr_url.text = (
-        f"s3://lp-prod-protected//{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
+        f"s3://lp-prod-protected/{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
     )
     s3_attr_desc = Element("URLDescription", None, None)
     s3_attr_desc.text = f"This link provides direct download access via S3 to the Fmask quality layer {hls_granule_ur}.Fmask.tif"  # noqa: E501

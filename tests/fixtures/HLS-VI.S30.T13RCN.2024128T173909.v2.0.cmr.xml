@@ -315,7 +315,7 @@
       <URLDescription>Download Fmask quality layer HLS.S30.T13RCN.2024128T173909.v2.0.Fmask.tif</URLDescription>
     </OnlineAccessURL>
     <OnlineAccessURL>
-      <URL>s3://lp-prod-protected//HLSS30.020/HLS.S30.T13RCN.2024128T173909.v2.0/HLS.S30.T13RCN.2024128T173909.v2.0.Fmask.tif</URL>
+      <URL>s3://lp-prod-protected/HLSS30.020/HLS.S30.T13RCN.2024128T173909.v2.0/HLS.S30.T13RCN.2024128T173909.v2.0.Fmask.tif</URL>
       <URLDescription>This link provides direct download access via S3 to the Fmask quality layer HLS.S30.T13RCN.2024128T173909.v2.0.Fmask.tif</URLDescription>
     </OnlineAccessURL>
   </OnlineAccessURLs>
