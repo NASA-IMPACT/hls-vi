@@ -3,6 +3,7 @@ import importlib_resources
 import os
 import re
 import sys
+from xml.dom import minidom
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -136,9 +137,6 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
         input_granule_ur,
     )
 
-    # ensure any added attributes are indented
-    ET.indent(tree)
-
     with (
         importlib_resources.files("hls_vi")
         / "schema"
@@ -146,11 +144,17 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     ).open() as xsd:
         ET.XMLSchema(file=xsd).assertValid(tree)
 
-    tree.write(
-        str(output_dir / metadata_path.name.replace("HLS", "HLS-VI")),
-        encoding="utf-8",
-        xml_declaration=True,
+    # Python 3.9 or `lxml==4.5` add an `indent()` function to nicely format our XML
+    # Alas we cannot use those yet, so rely on this approach using `xml.dom.minidom`
+    dom = minidom.parseString(
+        ET.tostring(tree, xml_declaration=True, pretty_print=False)
     )
+    pretty_xml = os.linesep.join(
+        [line for line in dom.toprettyxml(indent="  ").splitlines() if line.strip()]
+    )
+
+    dest = output_dir / metadata_path.name.replace("HLS", "HLS-VI")
+    dest.write_text(pretty_xml, encoding="utf-8")
 
 
 def normalize_additional_attributes(container: ElementBase) -> None:
