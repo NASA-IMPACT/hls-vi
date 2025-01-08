@@ -3,6 +3,7 @@ import importlib_resources
 import os
 import re
 import sys
+from xml.dom import minidom
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -92,7 +93,13 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     processing_time = tags["HLS_VI_PROCESSING_TIME"]
 
     granule_ur = tree.find("GranuleUR")
+    input_granule_ur = granule_ur.text
     granule_ur.text = granule_ur.text.replace("HLS", "HLS-VI")
+    set_additional_attribute(
+        tree.find("AdditionalAttributes"),
+        "Input_HLS_GranuleUR",
+        input_granule_ur,
+    )
 
     time_format = "%Y-%m-%dT%H:%M:%S.%fZ"
     formatted_date = datetime.now(timezone.utc).strftime(time_format)
@@ -125,6 +132,11 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
 
     tree.find("DataFormat").text = "COG"
 
+    append_fmask_online_access_urls(
+        tree.find("OnlineAccessURLs"),
+        input_granule_ur,
+    )
+
     with (
         importlib_resources.files("hls_vi")
         / "schema"
@@ -132,17 +144,23 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     ).open() as xsd:
         ET.XMLSchema(file=xsd).assertValid(tree)
 
-    tree.write(
-        str(output_dir / metadata_path.name.replace("HLS", "HLS-VI")),
-        encoding="utf-8",
-        xml_declaration=True,
+    # Python 3.9 or `lxml==4.5` add an `indent()` function to nicely format our XML
+    # Alas we cannot use those yet, so rely on this approach using `xml.dom.minidom`
+    dom = minidom.parseString(
+        ET.tostring(tree, xml_declaration=True, pretty_print=False)
     )
+    pretty_xml = os.linesep.join(
+        [line for line in dom.toprettyxml(indent="  ").splitlines() if line.strip()]
+    )
+
+    dest = output_dir / metadata_path.name.replace("HLS", "HLS-VI")
+    dest.write_text(pretty_xml, encoding="utf-8")
 
 
 def normalize_additional_attributes(container: ElementBase) -> None:
     """Normalize additional attribute values.
 
-    On rare occassions, granule data is split and recombined upstream.  When this
+    On rare occasions, granule data is split and recombined upstream.  When this
     occurs, the associated metadata is also split and recombined, resulting in values
     for additional attributes that are created by joining the separate parts with the
     string `" + "`.
@@ -191,6 +209,39 @@ def set_additional_attribute(attrs: ElementBase, name: str, value: str) -> None:
         attr.append(attr_name)
         attr.append(attr_values)
         attrs.append(attr)
+
+
+def append_fmask_online_access_urls(
+    access_urls: ElementBase, hls_granule_ur: str
+) -> None:
+    """Include links to Fmask layer from HLS granule in metadata
+
+    This is intended to help users find the relevant Fmask band without
+    having to duplicate it into the HLS-VI product. See,
+    https://github.com/NASA-IMPACT/hls-vi/issues/47
+    """
+    prefix = "HLSL30.020" if hls_granule_ur.startswith("HLS.L30") else "HLSS30.020"
+
+    http_attr = Element("OnlineAccessURL", None, None)
+    http_attr_url = Element("URL", None, None)
+    http_attr_url.text = f"https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"  # noqa: E501
+    http_attr_desc = Element("URLDescription", None, None)
+    http_attr_desc.text = f"Download Fmask quality layer {hls_granule_ur}.Fmask.tif"
+    http_attr.append(http_attr_url)
+    http_attr.append(http_attr_desc)
+
+    s3_attr = Element("OnlineAccessURL", None, None)
+    s3_attr_url = Element("URL", None, None)
+    s3_attr_url.text = (
+        f"s3://lp-prod-protected/{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
+    )
+    s3_attr_desc = Element("URLDescription", None, None)
+    s3_attr_desc.text = f"This link provides direct download access via S3 to the Fmask quality layer {hls_granule_ur}.Fmask.tif"  # noqa: E501
+    s3_attr.append(s3_attr_url)
+    s3_attr.append(s3_attr_desc)
+
+    access_urls.append(http_attr)
+    access_urls.append(s3_attr)
 
 
 def parse_args() -> Tuple[Path, Path]:

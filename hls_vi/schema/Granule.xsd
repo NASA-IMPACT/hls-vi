@@ -14,6 +14,7 @@ xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="GranuleDelete" type="GranuleDelete">
   </xs:element>
   <xs:element name="GranuleUR" type="GranuleUR"></xs:element>
+  <xs:element name="Input_GranuleUR" type="GranuleUR"></xs:element>
   <xs:complexType name="GranuleMetaDataFile">
     <xs:annotation>
       <xs:documentation />
@@ -1298,7 +1299,7 @@ xmlns:xs="http://www.w3.org/2001/XMLSchema">
       type="ListOfAdditionalAttributeValues">
         <xs:annotation>
           <xs:documentation>The ordered list of values of the
-          additioanl attribute for this granule. The values will be
+          additional attribute for this granule. The values will be
           kept in the order which they appear.</xs:documentation>
         </xs:annotation>
       </xs:element>
