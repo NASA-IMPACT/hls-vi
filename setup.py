@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="hls_vi",
-    version="1.12",
+    version="1.16",
     packages=["hls_vi"],
     include_package_data=True,
     install_requires=[
