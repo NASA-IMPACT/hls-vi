@@ -1,7 +1,6 @@
 import getopt
 import importlib_resources
 import os
-import re
 import sys
 from xml.dom import minidom
 
