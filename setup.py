@@ -6,7 +6,7 @@ setup(
     packages=["hls_vi"],
     include_package_data=True,
     install_requires=[
-        "dataclasses",
+        "dataclasses;python_version<'3.7'",
         "geojson",
         "importlib_resources",
         "lxml>=3.6.0,<6",
