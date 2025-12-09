@@ -2,11 +2,11 @@ from setuptools import setup
 
 setup(
     name="hls_vi",
-    version="1.19",
+    version="1.20",
     packages=["hls_vi"],
     include_package_data=True,
+    python_requires=">=3.12,<4",
     install_requires=[
-        "dataclasses;python_version<'3.7'",
         "geojson",
         "importlib_resources",
         "lxml>=3.6.0,<6",
@@ -14,7 +14,6 @@ setup(
         "pystac[validation]>=1.0.0rc2",
         "rasterio",
         "shapely",
-        "typing-extensions",
         "untangle",
     ],
     extras_require={
