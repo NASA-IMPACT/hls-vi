@@ -11,7 +11,10 @@ from pystac.extensions.eo import Band, EOExtension
 from pystac.extensions.projection import ProjectionExtension
 from pystac.extensions.scientific import ScientificExtension
 from pystac.extensions.view import ViewExtension
+from pystac.version import STACVersion
 from shapely.geometry import shape
+
+STACVersion.set_stac_version("1.0.0")
 
 # HLS_VI band information
 hls_vi_band_info = {
@@ -101,8 +104,8 @@ def get_geometry(granule: untangle.Element) -> MultiPolygon:
             ring.append(geojson_point)
 
         closing_point = [
-            float(poly.Boundary.Point[0].PointLongitude.cdata),
-            float(poly.Boundary.Point[0].PointLatitude.cdata),
+            float(poly.Boundary.Point[0].PointLongitude.cdata),  # type: ignore[union-attr, index]
+            float(poly.Boundary.Point[0].PointLatitude.cdata),  # type: ignore[union-attr, index]
         ]
         ring.append(closing_point)
         ringtuple = (ring,)
@@ -174,13 +177,13 @@ def add_assets(
         url = f"https://{endpoint}/lp-prod-protected/HLSL30_VI.{version}/{item_id}/"
         public_url = f"https://{endpoint}/lp-prod-public/HLSL30_VI.{version}/{item_id}/"
 
-    for band_id, band_info in band_info.items():
+    for band_id, band_info_ in band_info.items():
         band_url = f"{url}{item_id}.{band_id}.tif"
         asset = pystac.Asset(
             href=band_url, media_type=pystac.MediaType.COG, roles=["data"]
         )
-        bands = [band_info["band"]]
-        EOExtension.ext(asset).bands = bands
+        bands = [band_info_["band"]]
+        EOExtension.ext(asset).bands = bands  # type: ignore
         item.add_asset(band_id, asset)
 
     thumbnail_url = f"{public_url}{item_id}.jpg"
@@ -283,7 +286,7 @@ def cmr_to_item(hls_vi_metadata: str, endpoint: str, version: str) -> Mapping[st
     process_view_geometry(item, granule)
     process_scientific(item, granule)
 
-    return item.to_dict()  # type: ignore
+    return item.to_dict()
 
 
 def create_item(
