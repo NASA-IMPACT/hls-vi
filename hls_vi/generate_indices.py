@@ -188,7 +188,7 @@ def read_band(tif_path: Path) -> np.ma.masked_array:
     #   atmospheric compensation where it's possible to have values >100% reflectance
     #   due to unmet assumptions about topography.
     # See, https://github.com/NASA-IMPACT/hls-vi/issues/44#issuecomment-2520592212
-    return np.ma.masked_less_equal(data, 0)
+    return np.ma.masked_less_equal(data, 0)  # type: ignore[no-any-return, no-untyped-call]
 
 
 def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
@@ -196,7 +196,7 @@ def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
     # we wish to mask data where the Fmask has any one of the following bits set:
     # cloud shadow (bit 3), adjacent to cloud/shadow (bit 2), cloud (bit 1).
     cloud_like = int("00001110", 2)
-    return np.ma.masked_array(data, fmask & cloud_like != 0)
+    return np.ma.masked_array(data, fmask & cloud_like != 0)  # type: ignore[no-untyped-call]
 
 
 def apply_union_of_masks(bands: List[np.ma.masked_array]) -> List[np.ma.masked_array]:
@@ -214,7 +214,7 @@ def apply_union_of_masks(bands: List[np.ma.masked_array]) -> List[np.ma.masked_a
     # so bitwise "or" will  mask if "any" band has a masked value for that pixel
     mask = np.ma.nomask
     for band in bands:
-        mask = np.ma.mask_or(mask, band.mask)
+        mask = np.ma.mask_or(mask, band.mask)  # type: ignore[no-untyped-call]
 
     for band in bands:
         band.mask = mask
@@ -296,7 +296,7 @@ def write_granule_index(
 
 def evi(data: BandData) -> np.ma.masked_array:
     b, r, nir = data[Band.B], data[Band.R], data[Band.NIR]
-    return 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1)
+    return 2.5 * (nir - r) / (nir + 6 * r - 7.5 * b + 1)  # type: ignore[no-any-return]
 
 
 def msavi(data: BandData) -> np.ma.masked_array:
@@ -307,7 +307,7 @@ def msavi(data: BandData) -> np.ma.masked_array:
         sqrt_term >= 0,
         (2 * nir + 1 - np.sqrt(sqrt_term)) / 2,
         np.nan,
-    )
+    )  # type: ignore[no-untyped-call]
     result.fill_value = r.fill_value
 
     return result
@@ -315,37 +315,37 @@ def msavi(data: BandData) -> np.ma.masked_array:
 
 def nbr(data: BandData) -> np.ma.masked_array:
     nir, swir2 = data[Band.NIR], data[Band.SWIR2]
-    return (nir - swir2) / (nir + swir2)
+    return (nir - swir2) / (nir + swir2)  # type: ignore[no-any-return]
 
 
 def nbr2(data: BandData) -> np.ma.masked_array:
     swir1, swir2 = data[Band.SWIR1], data[Band.SWIR2]
-    return (swir1 - swir2) / (swir1 + swir2)
+    return (swir1 - swir2) / (swir1 + swir2)  # type: ignore[no-any-return]
 
 
 def ndmi(data: BandData) -> np.ma.masked_array:
     nir, swir1 = data[Band.NIR], data[Band.SWIR1]
-    return (nir - swir1) / (nir + swir1)
+    return (nir - swir1) / (nir + swir1)  # type: ignore[no-any-return]
 
 
 def ndvi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    return (nir - r) / (nir + r)
+    return (nir - r) / (nir + r)  # type: ignore[no-any-return]
 
 
 def ndwi(data: BandData) -> np.ma.masked_array:
     g, nir = data[Band.G], data[Band.NIR]
-    return (g - nir) / (g + nir)
+    return (g - nir) / (g + nir)  # type: ignore[no-any-return]
 
 
 def savi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    return 1.5 * (nir - r) / (nir + r + 0.5)
+    return 1.5 * (nir - r) / (nir + r + 0.5)  # type: ignore[no-any-return]
 
 
 def tvi(data: BandData) -> np.ma.masked_array:
     g, r, nir = data[Band.G], data[Band.R], data[Band.NIR]
-    return (120 * (nir - g) - 200 * (r - g)) / 2  # pyright: ignore[reportReturnType]
+    return (120 * (nir - g) - 200 * (r - g)) / 2  # type: ignore[no-any-return]
 
 
 class Index(Enum):
@@ -390,7 +390,7 @@ class Index(Enum):
         # We need to round to whole numbers (i.e., 0 decimal places, which is
         # the default for np.round) because we convert to integer values, but
         # numpy's conversion to integer types performs truncation, not rounding.
-        return np.ma.round(scaled_index).astype(np.int16)
+        return np.ma.round(scaled_index).astype(np.int16)  # type: ignore[no-untyped-call, no-any-return]
 
 
 def parse_args() -> Tuple[Path, Path, str]:

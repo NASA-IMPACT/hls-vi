@@ -2,24 +2,24 @@ from setuptools import setup
 
 setup(
     name="hls_vi",
-    version="1.19",
+    version="1.20",
     packages=["hls_vi"],
     include_package_data=True,
     install_requires=[
-        "dataclasses;python_version<'3.7'",
         "geojson",
         "importlib_resources",
         "lxml>=3.6.0,<6",
-        "numpy>=1.19,<2",
-        "pystac[validation]==1.0.0rc2",
+        "numpy",
+        # we can't use pystac>=1.12.0 because they did a major/breaking bump to
+        # the projection extension (v1.x to v2) that renamed proj:epsg -> proj:code.
+        "pystac[validation]>=1.0.0rc2,<1.12.0",
         "rasterio",
         "shapely",
-        "typing-extensions",
         "untangle",
     ],
     extras_require={
         "test": [
-            "black[jupyter]==22.8.0",  # Last version to support Python 3.6 runtime
+            "black[jupyter]",
             "flake8",
             "mypy",
             "pytest",

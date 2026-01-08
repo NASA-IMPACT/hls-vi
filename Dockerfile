@@ -1,24 +1,14 @@
-FROM osgeo/gdal:ubuntu-small-3.0.3
+FROM python:3.12-slim
 
 RUN : \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    build-essential \
-    libjpeg-dev \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
-    python3.6 \
-    python3-dev \
-    python3-pip \
-    python3-venv \
+        libexpat1 \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --no-cache-dir --upgrade pip setuptools \
-    && pip3 install --no-cache-dir rasterio==1.1.3 tox tox-venv --no-binary rasterio \
-    && :
-
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /hls_vi
+
 COPY ./ ./
+RUN pip install '.[test]' && pip install tox
 
 ENTRYPOINT [ "tox" ]
