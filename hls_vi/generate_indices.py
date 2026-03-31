@@ -90,9 +90,7 @@ class Instrument(Enum):
     # the satellite name.
     S30 = S30Band, lambda tags: tags.get("PRODUCT_URI", "").split("_")[0]
 
-    def __init__(
-        self, band_type: Type[InstrumentBand], parse_satellite: Callable[[Tags], str]
-    ) -> None:
+    def __init__(self, band_type: Type[InstrumentBand], parse_satellite: Callable[[Tags], str]) -> None:
         self.bands: List[InstrumentBand] = list(band_type)
         self.parse_satellite = parse_satellite
 
@@ -163,9 +161,7 @@ def read_granule_bands(input_dir: Path, id_str: str) -> Granule:
         fmask = tif.read(1, masked=False)
 
     tifnames = [f"{id_}.{band.name}.tif" for band in id_.instrument.bands]
-    data = apply_union_of_masks(
-        [apply_fmask(read_band(input_dir / tifname), fmask) for tifname in tifnames]
-    )
+    data = apply_union_of_masks([apply_fmask(read_band(input_dir / tifname), fmask) for tifname in tifnames])
     harmonized_bands = [band.value for band in id_.instrument.bands]
 
     # Every band has the same CRS, transform, and tags, so we can use the first one to
@@ -383,9 +379,7 @@ class Index(Enum):
         # Before converting to int16 we want to clamp the values of our float to
         # the min/max bounds of an int16 to prevent values wrapping around
         int16_info = np.iinfo("int16")
-        scaled_index = np.ma.clip(
-            scaled_index, a_min=int16_info.min, a_max=int16_info.max
-        )
+        scaled_index = np.ma.clip(scaled_index, a_min=int16_info.min, a_max=int16_info.max)
 
         # We need to round to whole numbers (i.e., 0 decimal places, which is
         # the default for np.round) because we convert to integer values, but
