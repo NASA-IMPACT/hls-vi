@@ -3,7 +3,7 @@ name: Test
 on: [push, workflow_dispatch]
 
 jobs:
-  tox_in_docker:
+  test:
     runs-on: ubuntu-latest
 
     steps:

@@ -1,5 +1,5 @@
 services:
-  tox:
+  app:
     build: .
     volumes:
       - ${PWD}/tests/fixtures:/hls_vi/tests/fixtures

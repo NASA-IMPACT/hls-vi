@@ -33,9 +33,30 @@ where:
   command, and this is where the new CMR XML metadata file is written, named the
   same as the input XML file, but with the prefix `HLS` replaced with `HLS-VI`.
 
+## Development
+
+Development requires [uv](https://docs.astral.sh/uv/). To set up the environment:
+
+```bash
+uv sync
+```
+
+This installs the package and all dev dependencies (linters, type checkers, test runner).
+
 ## Tests
 
-You can run tests using Docker:
+Run checks locally using the scripts in `scripts/`:
+
+```bash
+scripts/format       # ruff check --fix && ruff format
+scripts/lint         # ruff check && ruff format --check
+scripts/typecheck    # mypy
+scripts/test         # pytest
+```
+
+Each script forwards extra arguments, e.g. `scripts/test -k "not test_generate_indices"`.
+
+Or run the full suite via Docker (no local Python install needed):
 
 ```bash
 make test           # Run all tests

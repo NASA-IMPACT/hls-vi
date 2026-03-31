@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hls_vi"
+version = "1.20"
+requires-python = ">=3.12"
+dependencies = [
+    "geojson",
+    "importlib_resources",
+    "lxml>=3.6.0,<6",
+    "numpy",
+    # we can't use pystac>=1.12.0 because they did a major/breaking bump to
+    # the projection extension (v1.x to v2) that renamed proj:epsg -> proj:code.
+    "pystac[validation]>=1.0.0rc2,<1.12.0",
+    "rasterio",
+    "shapely",
+    "untangle",
+]
+
+[dependency-groups]
+dev = [
+    "mypy",
+    "ruff",
+    "pytest",
+    "types-untangle",
+]
+
+[project.scripts]
+vi_generate_indices = "hls_vi.generate_indices:main"
+vi_generate_metadata = "hls_vi.generate_metadata:main"
+vi_generate_stac_items = "hls_vi.generate_stac_items:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["hls_vi*"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["C90"]  # mccabe complexity
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.mypy]
+files = "hls_vi"
+strict = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+show_column_numbers = true
+# mypy has trouble with some of the untangle.Element attribute references
+disable_error_code = ["attr-defined"]
+
+[[tool.mypy.overrides]]
+module = ["geojson", "lxml.*", "numpy", "pystac.*", "rasterio.*", "shapely.*"]
+ignore_missing_imports = true
