@@ -188,7 +188,7 @@ def read_band(tif_path: Path) -> np.ma.masked_array:
     #   atmospheric compensation where it's possible to have values >100% reflectance
     #   due to unmet assumptions about topography.
     # See, https://github.com/NASA-IMPACT/hls-vi/issues/44#issuecomment-2520592212
-    return np.ma.masked_less_equal(data, 0)  # type: ignore[no-any-return, no-untyped-call]
+    return np.ma.masked_less_equal(data, 0)
 
 
 def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
@@ -196,7 +196,7 @@ def apply_fmask(data: np.ndarray, fmask: np.ndarray) -> np.ma.masked_array:
     # we wish to mask data where the Fmask has any one of the following bits set:
     # cloud shadow (bit 3), adjacent to cloud/shadow (bit 2), cloud (bit 1).
     cloud_like = int("00001110", 2)
-    return np.ma.masked_array(data, fmask & cloud_like != 0)  # type: ignore[no-untyped-call]
+    return np.ma.masked_array(data, fmask & cloud_like != 0)
 
 
 def apply_union_of_masks(bands: List[np.ma.masked_array]) -> List[np.ma.masked_array]:
@@ -214,7 +214,7 @@ def apply_union_of_masks(bands: List[np.ma.masked_array]) -> List[np.ma.masked_a
     # so bitwise "or" will  mask if "any" band has a masked value for that pixel
     mask = np.ma.nomask
     for band in bands:
-        mask = np.ma.mask_or(mask, band.mask)  # type: ignore[no-untyped-call]
+        mask = np.ma.mask_or(mask, band.mask)  # type: ignore[assignment]
 
     for band in bands:
         band.mask = mask
@@ -340,7 +340,7 @@ def ndwi(data: BandData) -> np.ma.masked_array:
 
 def savi(data: BandData) -> np.ma.masked_array:
     r, nir = data[Band.R], data[Band.NIR]
-    return 1.5 * (nir - r) / (nir + r + 0.5)  # type: ignore[no-any-return]
+    return 1.5 * (nir - r) / (nir + r + 0.5)
 
 
 def tvi(data: BandData) -> np.ma.masked_array:
