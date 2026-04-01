@@ -122,19 +122,13 @@ def process_common_metadata(item: pystac.Item, granule: untangle.Element) -> Non
         granule (untangle.Element): HLS_VI Granule information from the xml file
     """
     start_datetime_str = granule.Temporal.RangeDateTime.BeginningDateTime.cdata
-    item_start_datetime = datetime.datetime.strptime(
-        start_datetime_str, "%Y-%m-%dT%H:%M:%S.%fZ"
-    )
+    item_start_datetime = datetime.datetime.strptime(start_datetime_str, "%Y-%m-%dT%H:%M:%S.%fZ")
     end_datetime_str = granule.Temporal.RangeDateTime.EndingDateTime.cdata
-    item_end_datetime = datetime.datetime.strptime(
-        end_datetime_str, "%Y-%m-%dT%H:%M:%S.%fZ"
-    )
+    item_end_datetime = datetime.datetime.strptime(end_datetime_str, "%Y-%m-%dT%H:%M:%S.%fZ")
     item.common_metadata.start_datetime = item_start_datetime
     item.common_metadata.end_datetime = item_end_datetime
     item.common_metadata.platform = granule.Platforms.Platform.ShortName.cdata.lower()
-    instrument = (
-        granule.Platforms.Platform.Instruments.Instrument.ShortName.cdata.lower()
-    )
+    instrument = granule.Platforms.Platform.Instruments.Instrument.ShortName.cdata.lower()
     # For L30, the instrument is "OLI", but for S30, it is "Sentinel-2 MSI", we simply
     # split on spaces and grab the last element, so we get either "OLI" or "MSI".
     item_instrument = instrument.split()[1] if " " in instrument else instrument
@@ -154,9 +148,7 @@ def process_eo(item: pystac.Item, granule: untangle.Element) -> None:
             eo_extension.cloud_cover = float(attribute.Values.Value.cdata)
 
 
-def add_assets(
-    item: pystac.Item, granule: untangle.Element, endpoint: str, version: str
-) -> None:
+def add_assets(item: pystac.Item, granule: untangle.Element, endpoint: str, version: str) -> None:
     """Function adds all the assets to the STAC item
 
     Args:
@@ -179,24 +171,18 @@ def add_assets(
 
     for band_id, band_info_ in band_info.items():
         band_url = f"{url}{item_id}.{band_id}.tif"
-        asset = pystac.Asset(
-            href=band_url, media_type=pystac.MediaType.COG, roles=["data"]
-        )
+        asset = pystac.Asset(href=band_url, media_type=pystac.MediaType.COG, roles=["data"])
         bands = [band_info_["band"]]
         EOExtension.ext(asset).bands = bands  # type: ignore
         item.add_asset(band_id, asset)
 
     thumbnail_url = f"{public_url}{item_id}.jpg"
-    thumbnail_asset = pystac.Asset(
-        href=thumbnail_url, media_type=pystac.MediaType.JPEG, roles=["thumbnail"]
-    )
+    thumbnail_asset = pystac.Asset(href=thumbnail_url, media_type=pystac.MediaType.JPEG, roles=["thumbnail"])
     item.add_asset("thumbnail", thumbnail_asset)
     item.set_self_href(f"{public_url}{item_id}_stac.json")
 
 
-def process_projection(
-    item: pystac.Item, granule: untangle.Element, index_file: str
-) -> None:
+def process_projection(item: pystac.Item, granule: untangle.Element, index_file: str) -> None:
     """Function fetches the projection information from the HLS_VI band file and
     compares if the projection is same for the granule as well as the HLS_VI band image.
 
@@ -289,9 +275,7 @@ def cmr_to_item(hls_vi_metadata: str, endpoint: str, version: str) -> Mapping[st
     return item.to_dict()
 
 
-def create_item(
-    hls_vi_metadata: str, out_json: str, endpoint: str, version: str
-) -> None:
+def create_item(hls_vi_metadata: str, out_json: str, endpoint: str, version: str) -> None:
     """Function acts as an endpoint to create a STAC item for the HLS_VI granule.
 
     Args:

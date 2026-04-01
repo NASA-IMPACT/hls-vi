@@ -49,21 +49,15 @@ def assert_tifs_equal(granule: Granule, actual: Path, expected: Path):
             assert (actual_data == index_data).all()
             assert (actual_data == expected_data).all()
 
-            actual_tags, actual_time_str = remove_item(
-                actual_src.tags(), "HLS_VI_PROCESSING_TIME"
-            )
-            expected_tags, expected_time_str = remove_item(
-                expected_src.tags(), "HLS_VI_PROCESSING_TIME"
-            )
+            actual_tags, actual_time_str = remove_item(actual_src.tags(), "HLS_VI_PROCESSING_TIME")
+            expected_tags, expected_time_str = remove_item(expected_src.tags(), "HLS_VI_PROCESSING_TIME")
 
             assert actual_tags == expected_tags
             assert actual_time_str is not None
             assert expected_time_str is not None
 
             actual_time = datetime.strptime(actual_time_str, ISO_8601_DATETIME_FORMAT)
-            expected_time = datetime.strptime(
-                expected_time_str, ISO_8601_DATETIME_FORMAT
-            )
+            expected_time = datetime.strptime(expected_time_str, ISO_8601_DATETIME_FORMAT)
 
             # The actual time should be greater than the expected time because
             # the actual time is the time when the VI was generated (now, during
@@ -72,9 +66,7 @@ def assert_tifs_equal(granule: Granule, actual: Path, expected: Path):
             assert actual_time > expected_time
 
 
-def remove_item(
-    mapping: Mapping[str, str], key: str
-) -> Tuple[Mapping[str, str], Optional[str]]:
+def remove_item(mapping: Mapping[str, str], key: str) -> Tuple[Mapping[str, str], Optional[str]]:
     return {k: v for k, v in mapping.items() if k != key}, mapping.get(key)
 
 
@@ -124,9 +116,7 @@ def test_apply_union_of_masks():
     np.testing.assert_array_equal(masked[0].mask, np.array([True, True, False, True]))
 
 
-def create_fake_granule_data(
-    dest: Path, granule_id: str, sr: Dict[Band, int], fmask: int
-):
+def create_fake_granule_data(dest: Path, granule_id: str, sr: Dict[Band, int], fmask: int):
     """Generate fake granule data for a single pixel"""
     granule = GranuleId.from_string(granule_id)
 
@@ -149,9 +139,7 @@ def create_fake_granule_data(
             dst.write(data)
             dst.scales = (1 / 10_000,)
 
-    with rasterio.open(
-        dest / f"{granule_id}.Fmask.tif", "w", dtype="uint8", **profile
-    ) as dst:
+    with rasterio.open(dest / f"{granule_id}.Fmask.tif", "w", dtype="uint8", **profile) as dst:
         dst.write(np.array([[[fmask]]], dtype=np.uint8))
 
 
@@ -308,9 +296,7 @@ def test_generate_cmr_metadata(input_dir, output_dir):
         generate_metadata(input_dir=input_path, output_dir=output_path)
 
         actual_metadata_tree = remove_datetime_elements(ET.parse(actual_metadata_path))
-        expected_metadata_tree = remove_datetime_elements(
-            ET.parse(expected_metadata_path)
-        )
+        expected_metadata_tree = remove_datetime_elements(ET.parse(expected_metadata_path))
 
         actual_metadata = io.BytesIO()
         actual_metadata_tree.write(actual_metadata, encoding="utf-8")
@@ -318,9 +304,7 @@ def test_generate_cmr_metadata(input_dir, output_dir):
         expected_metadata = io.BytesIO()
         expected_metadata_tree.write(expected_metadata, encoding="utf-8")
 
-        assert (
-            actual_metadata.getvalue().decode() == expected_metadata.getvalue().decode()
-        )
+        assert actual_metadata.getvalue().decode() == expected_metadata.getvalue().decode()
     finally:
         with contextlib.suppress(FileNotFoundError):
             actual_metadata_path.unlink()

@@ -2,6 +2,6 @@
 !hls_vi/
 !tests/
 tests/fixtures/
-!mypy.ini
-!setup.py
-!tox.ini
+!pyproject.toml
+!uv.lock
+!MANIFEST.in

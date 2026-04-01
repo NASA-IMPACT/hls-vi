@@ -57,9 +57,7 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     set_additional_attribute(
         tree.find("AdditionalAttributes"),
         "IDENTIFIER_PRODUCT_DOI",
-        "10.5067/HLS/HLSL30_VI.002"
-        if "L30" in metadata_path.name
-        else "10.5067/HLS/HLSS30_VI.002",
+        "10.5067/HLS/HLSL30_VI.002" if "L30" in metadata_path.name else "10.5067/HLS/HLSS30_VI.002",
     )
     normalize_additional_attributes(tree.find("AdditionalAttributes"))
 
@@ -77,20 +75,14 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
     )
 
     with (
-        importlib_resources.files("hls_vi")
-        / "schema"
-        / "Granule.xsd"  # pyright: ignore[reportOperatorIssue]
+        importlib_resources.files("hls_vi") / "schema" / "Granule.xsd"  # pyright: ignore[reportOperatorIssue]
     ).open() as xsd:
         ET.XMLSchema(file=xsd).assertValid(tree)
 
     # Python 3.9 or `lxml==4.5` add an `indent()` function to nicely format our XML
     # Alas we cannot use those yet, so rely on this approach using `xml.dom.minidom`
-    dom = minidom.parseString(
-        ET.tostring(tree, xml_declaration=True, pretty_print=False)
-    )
-    pretty_xml = os.linesep.join(
-        [line for line in dom.toprettyxml(indent="  ").splitlines() if line.strip()]
-    )
+    dom = minidom.parseString(ET.tostring(tree, xml_declaration=True, pretty_print=False))
+    pretty_xml = os.linesep.join([line for line in dom.toprettyxml(indent="  ").splitlines() if line.strip()])
 
     dest = output_dir / metadata_path.name.replace("HLS", "HLS-VI")
     dest.write_text(pretty_xml, encoding="utf-8")
@@ -150,9 +142,7 @@ def set_additional_attribute(attrs: ElementBase, name: str, value: str) -> None:
         attrs.append(attr)
 
 
-def append_fmask_online_access_urls(
-    access_urls: ElementBase, hls_granule_ur: str
-) -> None:
+def append_fmask_online_access_urls(access_urls: ElementBase, hls_granule_ur: str) -> None:
     """Include links to Fmask layer from HLS granule in metadata
 
     This is intended to help users find the relevant Fmask band without
@@ -171,11 +161,11 @@ def append_fmask_online_access_urls(
 
     s3_attr = Element("OnlineAccessURL", None, None)
     s3_attr_url = Element("URL", None, None)
-    s3_attr_url.text = (
-        f"s3://lp-prod-protected/{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
-    )
+    s3_attr_url.text = f"s3://lp-prod-protected/{prefix}/{hls_granule_ur}/{hls_granule_ur}.Fmask.tif"
     s3_attr_desc = Element("URLDescription", None, None)
-    s3_attr_desc.text = f"This link provides direct download access via S3 to the Fmask quality layer {hls_granule_ur}.Fmask.tif"  # noqa: E501
+    s3_attr_desc.text = (
+        f"This link provides direct download access via S3 to the Fmask quality layer {hls_granule_ur}.Fmask.tif"  # noqa: E501
+    )
     s3_attr.append(s3_attr_url)
     s3_attr.append(s3_attr_desc)
 
