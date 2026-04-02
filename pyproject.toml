@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hls_vi"
-version = "1.20"
+version = "1.20.1"
 requires-python = ">=3.12"
 dependencies = [
     "geojson",
     "importlib_resources",
-    "lxml>=3.6.0,<6",
+    "lxml>=3.6.0",
     "numpy",
     # we can't use pystac>=1.12.0 because they did a major/breaking bump to
     # the projection extension (v1.x to v2) that renamed proj:epsg -> proj:code.
