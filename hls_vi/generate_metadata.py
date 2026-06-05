@@ -59,6 +59,11 @@ def generate_metadata(input_dir: Path, output_dir: Path) -> None:
         "IDENTIFIER_PRODUCT_DOI",
         "10.5067/HLS/HLSL30_VI.002" if "L30" in metadata_path.name else "10.5067/HLS/HLSS30_VI.002",
     )
+    set_additional_attribute(
+        tree.find("AdditionalAttributes"),
+        "FILLVALUE",
+        "-19999",
+    )
     normalize_additional_attributes(tree.find("AdditionalAttributes"))
 
     data_granule = tree.find("DataGranule")
